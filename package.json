@@ -1,0 +1,7 @@
+{
+  "name": "opencode-headless",
+  "version": "0.0.0-research",
+  "private": true,
+  "description": "RESEARCH PHASE — do not import. See research/ for in-progress investigation of how to wrap OpenCode the way claude-code-headless wraps Claude Code and codex-headless wraps Codex.",
+  "type": "module"
+}
