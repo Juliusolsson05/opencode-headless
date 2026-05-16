@@ -205,9 +205,9 @@ async function main() {
       await oc.ensureSession()
       await oc.prompt({
         prompt: [
-          'You are editing a tiny static landing page.',
+          'You are editing a tiny static landing page. Do not inspect files first.',
           'In this workspace, update index.html and styles.css only.',
-          'Use the write tool to replace both files completely.',
+          'Use one bash tool call with node -e to replace both files completely.',
           'Make the page a polished landing page for "Northstar Analytics".',
           'Requirements:',
           '- Keep it static HTML/CSS.',
@@ -237,6 +237,7 @@ async function main() {
           observed.toolSignals.includes('tool_result'),
         'tool lifecycle should include a completion/result signal',
       )
+      assert(observed.fileEvents.length > 0, 'file edits should publish screen file events')
       return {
         sessionID: oc.activeSessionID,
         assistantText: observed.assistantText.slice(0, 200),
@@ -244,6 +245,7 @@ async function main() {
         screenEvents: observed.screen.length,
         committedEvents: observed.committed.length,
         toolSignals: observed.toolSignals,
+        fileEvents: observed.fileEvents,
         rawEventTypes: [...new Set(observed.raw.map(event => event.type))],
         htmlBytes: Buffer.byteLength(html),
         cssBytes: Buffer.byteLength(css),
@@ -280,6 +282,7 @@ function observe(oc) {
     idle: false,
     semantic: [],
     screen: [],
+    fileEvents: [],
     committed: [],
     raw: [],
     unknownEvents: [],
@@ -308,6 +311,7 @@ function observe(oc) {
   oc.screen.on('event', event => {
     state.screen.push(event)
     if (event.type === 'activity' && event.active === false) state.idle = true
+    if (event.type === 'file') state.fileEvents.push(event)
   })
 
   oc.committed.on('event', event => {

@@ -139,6 +139,21 @@ export class EventDispatcher {
 
       case 'session.diff':
       case 'file.edited':
+        this.screen.publishFile({
+          action: 'edited',
+          sessionID: this.eventSessionID(payload),
+          path: getString(payload, ['path', 'file', 'filename']),
+          metadata: payload,
+        })
+        return
+      case 'file.watcher.updated':
+        this.screen.publishFile({
+          action: 'watcher',
+          sessionID: this.eventSessionID(payload),
+          path: getString(payload, ['path', 'file', 'filename']),
+          metadata: payload,
+        })
+        return
       case 'todo.updated':
       case 'command.executed':
       case 'vcs.branch.updated':

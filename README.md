@@ -2,6 +2,23 @@
 
 Programmatic OpenCode control through OpenCode's structured server API.
 
+## Should you use this package?
+
+Probably not if you are building a normal OpenCode integration.
+
+OpenCode already has a strong first-party headless surface: `opencode serve`,
+HTTP endpoints, SSE events, session history, permissions, tools, MCP, and
+plugins. If your app only needs OpenCode, prefer that API directly. It is
+cleaner, closer to upstream, and avoids a compatibility layer.
+
+This package exists for Agent Code's provider abstraction. Agent Code needs one
+operational shape across Claude Code, Codex, and OpenCode: semantic events,
+screen/overlay events, committed history, permissions, and raw provider events.
+Claude Code and Codex need heavier headless wrappers because important state is
+exposed through terminal/proxy/transcript behavior. OpenCode does not need that
+machinery; this package is mostly an adapter that makes OpenCode look like the
+same provider contract as the others.
+
 This package is intentionally **not** a terminal wrapper. Claude Code and
 Codex need PTY/screen support because parts of their useful state are exposed
 through terminal UI behavior. OpenCode already exposes the useful state through

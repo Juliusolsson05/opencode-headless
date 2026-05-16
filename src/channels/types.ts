@@ -219,12 +219,22 @@ export type ScreenCompactionEvent = {
   ts: number
 }
 
+export type ScreenFileEvent = {
+  type: 'file'
+  action: 'edited' | 'watcher'
+  sessionID?: string
+  path?: string
+  metadata?: unknown
+  ts: number
+}
+
 export type ScreenEvent =
   | ScreenSnapshotEvent
   | ScreenActivityEvent
   | ScreenPermissionEvent
   | ScreenQuestionEvent
   | ScreenCompactionEvent
+  | ScreenFileEvent
 
 export type CommittedEntryEvent = {
   type: 'entry'

@@ -44,6 +44,7 @@ export type {
   ScreenActivityEvent,
   ScreenCompactionEvent,
   ScreenEvent,
+  ScreenFileEvent,
   ScreenPermissionEvent,
   ScreenQuestionEvent,
   ScreenSnapshotEvent,

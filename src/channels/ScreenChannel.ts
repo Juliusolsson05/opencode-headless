@@ -4,6 +4,7 @@ import type {
   ScreenActivityEvent,
   ScreenCompactionEvent,
   ScreenEvent,
+  ScreenFileEvent,
   ScreenPermissionEvent,
   ScreenQuestionEvent,
   ScreenSnapshotEvent,
@@ -16,6 +17,7 @@ export type ScreenChannelEvents = {
   permission: [ScreenPermissionEvent]
   question: [ScreenQuestionEvent]
   compaction: [ScreenCompactionEvent]
+  file: [ScreenFileEvent]
 }
 
 export interface ScreenChannel {
@@ -76,6 +78,12 @@ export class ScreenChannel extends EventEmitter {
   publishCompaction(state: ScreenCompactionEvent['state']): void {
     const ev: ScreenCompactionEvent = { type: 'compaction', state, ts: Date.now() }
     this.emit('compaction', ev)
+    this.emit('event', ev)
+  }
+
+  publishFile(params: Omit<ScreenFileEvent, 'type' | 'ts'>): void {
+    const ev: ScreenFileEvent = { type: 'file', ...params, ts: Date.now() }
+    this.emit('file', ev)
     this.emit('event', ev)
   }
 }
