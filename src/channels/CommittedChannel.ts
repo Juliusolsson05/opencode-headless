@@ -99,5 +99,12 @@ function extractText(value: unknown): string {
   const parts = obj.parts ?? obj.contentParts ?? obj.message
   if (Array.isArray(parts)) return parts.map(extractText).filter(Boolean).join('\n')
   if (parts && typeof parts === 'object') return extractText(parts)
+  const state = obj.state
+  if (state && typeof state === 'object') {
+    const stateObj = state as Record<string, unknown>
+    const output = stateObj.output
+    if (typeof output === 'string') return output
+    if (output !== undefined && output !== null) return JSON.stringify(output)
+  }
   return ''
 }

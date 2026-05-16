@@ -62,6 +62,18 @@ export class EventDispatcher {
       case 'session.updated':
         this.captureSessionID(payload)
         return
+      case 'session.next.agent.switched':
+        this.screen.publishActivity({
+          active: true,
+          status: `agent:${getString(payload, ['agent']) ?? 'unknown'}`,
+        })
+        return
+      case 'session.next.model.switched':
+        this.screen.publishActivity({
+          active: true,
+          status: `model:${getString(payload, ['model.id', 'modelID']) ?? 'unknown'}`,
+        })
+        return
 
       case 'session.status':
         this.handleSessionStatus(payload)
@@ -125,6 +137,7 @@ export class EventDispatcher {
         })
         return
 
+      case 'session.diff':
       case 'file.edited':
       case 'todo.updated':
       case 'command.executed':
@@ -237,8 +250,20 @@ export class EventDispatcher {
     }
 
     if (kind === 'tool') {
-      const status = getString(part, ['status', 'state'])
+      const status = getString(part, ['status', 'state.status'])
       this.turns.ensureTurn(turnId, 'assistant')
+      const input = getUnknown(part, ['input', 'args', 'state.input'])
+      if (input !== undefined) {
+        this.semantic.publish({
+          type: 'tool_input_finalized',
+          turnId,
+          blockId: partID,
+          input,
+          name,
+          source: 'opencode-sse',
+          ts: Date.now(),
+        })
+      }
       this.semantic.publish({
         type: status === 'completed' || status === 'error' ? 'block_completed' : 'block_started',
         turnId,
@@ -248,7 +273,7 @@ export class EventDispatcher {
         source: 'opencode-sse',
         ts: Date.now(),
       })
-      const output = getString(part, ['output', 'result', 'metadata.output'])
+      const output = getTextValue(part, ['output', 'result', 'state.output', 'metadata.output'])
       if (output || status === 'error') {
         this.semantic.publish({
           type: 'tool_result',
@@ -383,6 +408,13 @@ function getUnknown(value: unknown, paths: string[]): unknown {
 function getString(value: unknown, paths: string[]): string | undefined {
   const found = getUnknown(value, paths)
   return typeof found === 'string' && found ? found : undefined
+}
+
+function getTextValue(value: unknown, paths: string[]): string | undefined {
+  const found = getUnknown(value, paths)
+  if (typeof found === 'string') return found
+  if (found === undefined || found === null) return undefined
+  return JSON.stringify(found)
 }
 
 function stringifyMaybe(value: unknown): string | undefined {

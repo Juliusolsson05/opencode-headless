@@ -40,9 +40,18 @@ async function main() {
       })
       await waitForIdle(observed)
       const history = await oc.refreshHistory()
+      const committedAssistantTexts = observed.committed
+        .filter(event => event.type === 'turn_committed' && event.role === 'assistant')
+        .map(event => event.text)
+        .filter(Boolean)
+      assert(
+        committedAssistantTexts.some(text => text.trim() === 'OK'),
+        'committed assistant history should include OK',
+      )
       return {
         sessionID: oc.activeSessionID,
         assistantText: observed.assistantText,
+        committedAssistantTexts,
         semanticEvents: observed.semantic.length,
         screenEvents: observed.screen.length,
         committedEvents: observed.committed.length,
@@ -51,6 +60,28 @@ async function main() {
       }
     } finally {
       await oc.stop()
+    }
+  })
+
+  await runCase('attach-mode', async () => {
+    const owner = await startHeadless()
+    const attached = new OpencodeHeadless({
+      mode: 'attach',
+      serverUrl: owner.serverUrl,
+      cwd: REPO_ROOT,
+    })
+    try {
+      await attached.start()
+      const sessions = await attached.client.listSessions()
+      assert(Array.isArray(sessions), 'attached client should list sessions')
+      return {
+        ownerUrl: owner.serverUrl,
+        attachedUrl: attached.serverUrl,
+        sessions: sessions.length,
+      }
+    } finally {
+      await attached.stop()
+      await owner.stop()
     }
   })
 
@@ -88,6 +119,11 @@ async function main() {
       )
       assert(/<section|<main|class=/i.test(html), 'index.html should look like real markup')
       assert(css.length > 200, 'styles.css should contain meaningful styling')
+      assert(
+        observed.toolSignals.includes('block_completed') ||
+          observed.toolSignals.includes('tool_result'),
+        'tool lifecycle should include a completion/result signal',
+      )
       return {
         sessionID: oc.activeSessionID,
         assistantText: observed.assistantText.slice(0, 200),
