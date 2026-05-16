@@ -85,6 +85,50 @@ async function main() {
     }
   })
 
+  await runCase('attach-followup-session', async () => {
+    const owner = await startHeadless()
+    const ownerObserved = observe(owner)
+    let attached
+    try {
+      const sessionID = await owner.ensureSession()
+      await owner.prompt({
+        prompt: 'The session codeword is ZEBRA-17. Reply with exactly: READY',
+      })
+      await waitFor(() => ownerObserved.assistantText.trim() === 'READY', {
+        label: 'first turn READY response',
+        observed: ownerObserved,
+      })
+      await waitForIdle(ownerObserved)
+
+      attached = new OpencodeHeadless({
+        mode: 'attach',
+        serverUrl: owner.serverUrl,
+        cwd: REPO_ROOT,
+        sessionID,
+        pure: true,
+      })
+      const attachedObserved = observe(attached)
+      await attached.start()
+      await attached.prompt({
+        prompt: 'What is the session codeword? Reply with only the codeword.',
+      })
+      await waitFor(() => attachedObserved.assistantText.includes('ZEBRA-17'), {
+        label: 'attached follow-up to recall codeword',
+        observed: attachedObserved,
+      })
+      await waitForIdle(attachedObserved)
+      return {
+        sessionID,
+        ownerEvents: ownerObserved.semantic.length,
+        attachedEvents: attachedObserved.semantic.length,
+        answer: attachedObserved.assistantText,
+      }
+    } finally {
+      if (attached) await attached.stop()
+      await owner.stop()
+    }
+  })
+
   await runCase('realistic-file-edit', async () => {
     await prepareWorkspace()
     const oc = await startHeadless(WORKSPACE)
@@ -95,6 +139,7 @@ async function main() {
         prompt: [
           'You are editing a tiny static landing page.',
           'In this workspace, update index.html and styles.css only.',
+          'Use the write tool to replace both files completely.',
           'Make the page a polished landing page for "Northstar Analytics".',
           'Requirements:',
           '- Keep it static HTML/CSS.',
@@ -201,6 +246,12 @@ function observe(oc) {
 
   oc.on('sse-error', err => {
     state.sseErrors.push(err.message)
+  })
+
+  oc.on('permission', req => {
+    void oc.permissionService.approveOnce(req.requestID).catch(err => {
+      state.sseErrors.push(`permission approval failed: ${err.message}`)
+    })
   })
 
   return state
