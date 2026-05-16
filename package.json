@@ -1,7 +1,17 @@
 {
   "name": "opencode-headless",
-  "version": "0.0.0-research",
-  "private": true,
-  "description": "RESEARCH PHASE — do not import. See research/ for in-progress investigation of how to wrap OpenCode the way claude-code-headless wraps Claude Code and codex-headless wraps Codex.",
-  "type": "module"
+  "version": "0.1.0",
+  "description": "Programmatically control OpenCode through its headless HTTP/SSE server surface",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.5.0"
+  },
+  "license": "MIT"
 }
