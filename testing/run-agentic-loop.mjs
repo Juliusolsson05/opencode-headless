@@ -12,6 +12,7 @@ import {
 
 const REPO_ROOT = new URL('../../..', import.meta.url).pathname
 const WORKSPACE = '/Users/juliusolsson/Desktop/Development/testing/opencode-work'
+const SDK_TYPES = join(REPO_ROOT, 'vendor/opencode-src/packages/sdk/js/src/v2/gen/types.gen.ts')
 const DEFAULT_TIMEOUT_MS = 120_000
 
 const results = []
@@ -197,61 +198,152 @@ async function main() {
     return { permission }
   })
 
-  await runCase('realistic-file-edit', async () => {
+  await runCase('system-dispatch-synthetic', async () => {
+    const semantic = new RecordingChannel()
+    const screen = new RecordingChannel()
+    const committed = new RecordingChannel()
+    const dispatcher = new EventDispatcher({ semantic, screen, committed })
+    dispatcher.dispatch({
+      type: 'mcp.tools.changed',
+      properties: {
+        server: 'filesystem',
+      },
+    })
+    dispatcher.dispatch({
+      type: 'workspace.status',
+      properties: {
+        workspaceID: 'ws_1',
+        status: 'connected',
+      },
+    })
+    const system = screen.events
+      .filter(event => event[0] === 'system')
+      .map(event => event[1])
+    assert(system.length === 2, 'system dispatch should publish mapped system events')
+    assert(system[0].category === 'mcp', 'MCP event should map to mcp category')
+    assert(system[1].category === 'workspace', 'workspace event should map to workspace category')
+    return { system }
+  })
+
+  await runCase('source-event-union-audit', async () => {
+    const source = await readFile(SDK_TYPES, 'utf8')
+    const union = source.match(/export type Event =\n(?<body>(?:  \| Event[^\n]+\n)+)/)?.groups?.body
+    assert(union, 'SDK v2 Event union should be readable from vendored OpenCode source')
+    const eventTypes = [...union.matchAll(/\| (Event[A-Za-z0-9]+)/g)].map(match => match[1])
+    const required = [
+      'EventMessagePartDelta',
+      'EventPermissionAsked',
+      'EventQuestionAsked',
+      'EventSessionStatus',
+      'EventSessionIdle',
+      'EventSessionNextToolProgress',
+      'EventSessionNextCompactionDelta',
+      'EventMcpToolsChanged',
+      'EventWorkspaceStatus',
+      'EventPtyUpdated',
+      'EventCatalogModelUpdated',
+    ]
+    for (const name of required) {
+      assert(eventTypes.includes(name), `SDK event union should include ${name}`)
+    }
+    assert(eventTypes.length >= 70, 'SDK event union should include the full modern event surface')
+    return {
+      eventCount: eventTypes.length,
+      required,
+    }
+  })
+
+  await runCase('agentic-multiturn-repair', async () => {
     await prepareWorkspace()
-    const oc = await startHeadless(WORKSPACE)
-    const observed = observe(oc)
+    const owner = await startHeadless(WORKSPACE)
+    const ownerObserved = observe(owner)
+    let attached
     try {
-      await oc.ensureSession()
-      await oc.prompt({
+      const sessionID = await owner.ensureSession()
+      await owner.prompt({
         prompt: [
-          'You are editing a tiny static landing page. Do not inspect files first.',
-          'In this workspace, update index.html and styles.css only.',
-          'Use one bash tool call with node -e to replace both files completely.',
-          'Make the page a polished landing page for "Northstar Analytics".',
-          'Requirements:',
-          '- Keep it static HTML/CSS.',
-          '- Add a hero, three feature cards, and one call to action.',
-          '- Include the exact text "Northstar Analytics".',
-          '- Include the exact text "Operational clarity for growing teams".',
-          '- Do not ask follow-up questions.',
-          'When finished, reply with exactly: DONE',
+          'This is a multi-turn integration test.',
+          'Use one bash tool call with node -e.',
+          'Create index.html, styles.css, and checklist.json.',
+          'index.html must include "Northstar Analytics" and a section with id="status".',
+          'styles.css must include at least one @media query.',
+          'checklist.json must contain {"phase":1,"needsFollowup":true}.',
+          'After the files are written, reply exactly: PHASE_ONE_DONE',
         ].join('\n'),
       })
-      await waitFor(() => observed.assistantText.includes('DONE'), {
-        label: 'assistant completion marker DONE',
-        observed,
+      await waitFor(() => ownerObserved.assistantText.includes('PHASE_ONE_DONE'), {
+        label: 'phase one completion marker',
+        observed: ownerObserved,
       })
-      await waitForIdle(observed)
+      await waitForIdle(ownerObserved)
+
+      await owner.prompt({
+        prompt: [
+          'Now perform the follow-up turn.',
+          'Use bash to inspect the three files.',
+          'If checklist.json says needsFollowup true, update it to {"phase":2,"needsFollowup":false,"verified":true}.',
+          'Also append the exact text "Operational clarity for growing teams" to index.html if it is missing.',
+          'Reply exactly: REPAIR_DONE',
+        ].join('\n'),
+      })
+      await waitFor(() => ownerObserved.assistantText.includes('REPAIR_DONE'), {
+        label: 'repair completion marker',
+        observed: ownerObserved,
+      })
+      await waitForIdle(ownerObserved)
+
+      attached = new OpencodeHeadless({
+        mode: 'attach',
+        serverUrl: owner.serverUrl,
+        cwd: WORKSPACE,
+        sessionID,
+        pure: true,
+      })
+      const attachedObserved = observe(attached)
+      await attached.start()
+      await attached.prompt({
+        prompt: [
+          'Continue this existing session.',
+          'Use bash to read checklist.json only.',
+          'If verified is true and needsFollowup is false, reply exactly: VERIFIED_TRUE',
+          'Otherwise reply exactly: VERIFIED_FALSE',
+        ].join('\n'),
+      })
+      await waitFor(() => /VERIFIED_(TRUE|FALSE)/.test(attachedObserved.assistantText), {
+        label: 'attached verification marker',
+        observed: attachedObserved,
+      })
+      await waitForIdle(attachedObserved)
+
       const html = await readFile(join(WORKSPACE, 'index.html'), 'utf8')
       const css = await readFile(join(WORKSPACE, 'styles.css'), 'utf8')
-      assert(html.includes('Northstar Analytics'), 'index.html should include product name')
+      const checklist = JSON.parse(await readFile(join(WORKSPACE, 'checklist.json'), 'utf8'))
+      assert(html.includes('Northstar Analytics'), 'multi-turn html should keep product name')
       assert(
         html.includes('Operational clarity for growing teams'),
-        'index.html should include required value prop',
+        'follow-up turn should add the required value prop',
       )
-      assert(/<section|<main|class=/i.test(html), 'index.html should look like real markup')
-      assert(css.length > 200, 'styles.css should contain meaningful styling')
+      assert(css.includes('@media'), 'multi-turn css should include a media query')
+      assert(checklist.phase === 2, 'follow-up turn should advance checklist phase')
+      assert(checklist.needsFollowup === false, 'follow-up turn should clear needsFollowup')
+      assert(checklist.verified === true, 'follow-up turn should verify checklist')
       assert(
-        observed.toolSignals.includes('block_completed') ||
-          observed.toolSignals.includes('tool_result'),
-        'tool lifecycle should include a completion/result signal',
+        attachedObserved.assistantText.includes('VERIFIED_TRUE'),
+        'attached continuation should observe verified state',
       )
-      assert(observed.fileEvents.length > 0, 'file edits should publish screen file events')
       return {
-        sessionID: oc.activeSessionID,
-        assistantText: observed.assistantText.slice(0, 200),
-        semanticEvents: observed.semantic.length,
-        screenEvents: observed.screen.length,
-        committedEvents: observed.committed.length,
-        toolSignals: observed.toolSignals,
-        fileEvents: observed.fileEvents,
-        rawEventTypes: [...new Set(observed.raw.map(event => event.type))],
-        htmlBytes: Buffer.byteLength(html),
-        cssBytes: Buffer.byteLength(css),
+        sessionID,
+        ownerSemanticEvents: ownerObserved.semantic.length,
+        ownerRawTypes: [...new Set(ownerObserved.raw.map(event => event.type))],
+        ownerToolSignals: ownerObserved.toolSignals,
+        ownerFileEvents: ownerObserved.fileEvents.length,
+        attachedSemanticEvents: attachedObserved.semantic.length,
+        attachedAnswer: attachedObserved.assistantText,
+        checklist,
       }
     } finally {
-      await oc.stop()
+      if (attached) await attached.stop()
+      await owner.stop()
     }
   })
 
@@ -426,6 +518,16 @@ class RecordingChannel {
   publishCompaction(state) {
     const ev = { type: 'compaction', state, ts: Date.now() }
     this.emit('compaction', ev)
+    this.emit('event', ev)
+  }
+  publishFile(params) {
+    const ev = { type: 'file', ...params, ts: Date.now() }
+    this.emit('file', ev)
+    this.emit('event', ev)
+  }
+  publishSystem(params) {
+    const ev = { type: 'system', ...params, ts: Date.now() }
+    this.emit('system', ev)
     this.emit('event', ev)
   }
   publishMessage(...args) {

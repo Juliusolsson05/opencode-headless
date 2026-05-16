@@ -228,6 +228,29 @@ export type ScreenFileEvent = {
   ts: number
 }
 
+export type ScreenSystemEvent = {
+  type: 'system'
+  category:
+    | 'mcp'
+    | 'command'
+    | 'project'
+    | 'vcs'
+    | 'workspace'
+    | 'worktree'
+    | 'pty'
+    | 'lsp'
+    | 'installation'
+    | 'catalog'
+    | 'tui'
+    | 'global'
+    | 'unknown'
+  action: string
+  sessionID?: string
+  message?: string
+  metadata?: unknown
+  ts: number
+}
+
 export type ScreenEvent =
   | ScreenSnapshotEvent
   | ScreenActivityEvent
@@ -235,6 +258,7 @@ export type ScreenEvent =
   | ScreenQuestionEvent
   | ScreenCompactionEvent
   | ScreenFileEvent
+  | ScreenSystemEvent
 
 export type CommittedEntryEvent = {
   type: 'entry'

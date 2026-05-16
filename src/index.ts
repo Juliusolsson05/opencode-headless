@@ -48,6 +48,7 @@ export type {
   ScreenPermissionEvent,
   ScreenQuestionEvent,
   ScreenSnapshotEvent,
+  ScreenSystemEvent,
   CommittedCompactBoundaryEvent,
   CommittedEntryEvent,
   CommittedEvent,

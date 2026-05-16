@@ -125,6 +125,15 @@ export class EventDispatcher {
       case 'question.replied':
         this.screen.publishQuestion({ visible: false, metadata: payload })
         return
+      case 'question.rejected':
+        this.screen.publishQuestion({ visible: false, metadata: payload })
+        this.screen.publishSystem({
+          category: 'command',
+          action: 'question.rejected',
+          sessionID: this.eventSessionID(payload),
+          metadata: payload,
+        })
+        return
 
       case 'session.error':
         this.semantic.publish({
@@ -138,6 +147,13 @@ export class EventDispatcher {
         return
 
       case 'session.diff':
+        this.screen.publishSystem({
+          category: 'project',
+          action: 'session.diff',
+          sessionID: this.eventSessionID(payload),
+          metadata: payload,
+        })
+        return
       case 'file.edited':
         this.screen.publishFile({
           action: 'edited',
@@ -155,14 +171,119 @@ export class EventDispatcher {
         })
         return
       case 'todo.updated':
+        this.screen.publishSystem({
+          category: 'command',
+          action: 'todo.updated',
+          sessionID: this.eventSessionID(payload),
+          metadata: payload,
+        })
+        return
       case 'command.executed':
+        this.screen.publishSystem({
+          category: 'command',
+          action: 'command.executed',
+          sessionID: this.eventSessionID(payload),
+          message: getString(payload, ['name']),
+          metadata: payload,
+        })
+        return
       case 'vcs.branch.updated':
+        this.screen.publishSystem({
+          category: 'vcs',
+          action: 'branch.updated',
+          message: getString(payload, ['branch']),
+          metadata: payload,
+        })
+        return
       case 'lsp.updated':
       case 'lsp.client.diagnostics':
+        this.screen.publishSystem({
+          category: 'lsp',
+          action: type,
+          message: getString(payload, ['path', 'serverID']),
+          metadata: payload,
+        })
+        return
+      case 'mcp.tools.changed':
+      case 'mcp.browser.open.failed':
+        this.screen.publishSystem({
+          category: 'mcp',
+          action: type,
+          message: getString(payload, ['server', 'mcpName', 'url']),
+          metadata: payload,
+        })
+        return
+      case 'project.updated':
+        this.screen.publishSystem({
+          category: 'project',
+          action: type,
+          message: getString(payload, ['name', 'id']),
+          metadata: payload,
+        })
+        return
+      case 'workspace.ready':
+      case 'workspace.failed':
+      case 'workspace.status':
+        this.screen.publishSystem({
+          category: 'workspace',
+          action: type,
+          message: getString(payload, ['name', 'message', 'status', 'workspaceID']),
+          metadata: payload,
+        })
+        return
+      case 'worktree.ready':
+      case 'worktree.failed':
+        this.screen.publishSystem({
+          category: 'worktree',
+          action: type,
+          message: getString(payload, ['name', 'message', 'branch']),
+          metadata: payload,
+        })
+        return
       case 'pty.created':
       case 'pty.updated':
       case 'pty.exited':
       case 'pty.deleted':
+        this.screen.publishSystem({
+          category: 'pty',
+          action: type,
+          message: getString(payload, ['id', 'info.id', 'info.title', 'exitCode']),
+          metadata: payload,
+        })
+        return
+      case 'installation.updated':
+      case 'installation.update-available':
+        this.screen.publishSystem({
+          category: 'installation',
+          action: type,
+          message: getString(payload, ['version']),
+          metadata: payload,
+        })
+        return
+      case 'catalog.model.updated':
+        this.screen.publishSystem({
+          category: 'catalog',
+          action: type,
+          metadata: payload,
+        })
+        return
+      case 'tui.prompt.append':
+      case 'tui.command.execute':
+      case 'tui.toast.show':
+      case 'tui.session.select':
+        this.screen.publishSystem({
+          category: 'tui',
+          action: type,
+          message: getString(payload, ['text', 'command', 'message', 'sessionID']),
+          metadata: payload,
+        })
+        return
+      case 'global.disposed':
+        this.screen.publishSystem({
+          category: 'global',
+          action: type,
+          metadata: payload,
+        })
         return
 
       default:
@@ -186,7 +307,7 @@ export class EventDispatcher {
   }
 
   private handleSessionStatus(payload: unknown): void {
-    const status = getString(payload, ['status', 'state', 'session.status'])
+    const status = getString(payload, ['status.type', 'state.type', 'session.status.type', 'status'])
     const active = status !== 'idle' && status !== 'stopped' && status !== 'error'
     this.screen.publishActivity({ active, status: status ?? null })
     if (status === 'idle') this.turns.completeTurn()

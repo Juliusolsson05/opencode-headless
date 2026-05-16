@@ -8,6 +8,7 @@ import type {
   ScreenPermissionEvent,
   ScreenQuestionEvent,
   ScreenSnapshotEvent,
+  ScreenSystemEvent,
 } from './types.js'
 
 export type ScreenChannelEvents = {
@@ -18,6 +19,7 @@ export type ScreenChannelEvents = {
   question: [ScreenQuestionEvent]
   compaction: [ScreenCompactionEvent]
   file: [ScreenFileEvent]
+  system: [ScreenSystemEvent]
 }
 
 export interface ScreenChannel {
@@ -84,6 +86,12 @@ export class ScreenChannel extends EventEmitter {
   publishFile(params: Omit<ScreenFileEvent, 'type' | 'ts'>): void {
     const ev: ScreenFileEvent = { type: 'file', ...params, ts: Date.now() }
     this.emit('file', ev)
+    this.emit('event', ev)
+  }
+
+  publishSystem(params: Omit<ScreenSystemEvent, 'type' | 'ts'>): void {
+    const ev: ScreenSystemEvent = { type: 'system', ...params, ts: Date.now() }
+    this.emit('system', ev)
     this.emit('event', ev)
   }
 }
