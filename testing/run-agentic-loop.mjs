@@ -3,7 +3,12 @@ import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
 
-import { OpencodeHeadless } from '../dist/index.js'
+import {
+  EventDispatcher,
+  OpencodeHeadless,
+  PermissionService,
+  SyncClient,
+} from '../dist/index.js'
 
 const REPO_ROOT = new URL('../../..', import.meta.url).pathname
 const WORKSPACE = '/Users/juliusolsson/Desktop/Development/testing/opencode-work'
@@ -52,6 +57,7 @@ async function main() {
         sessionID: oc.activeSessionID,
         assistantText: observed.assistantText,
         committedAssistantTexts,
+        rawEventTypes: [...new Set(observed.raw.map(event => event.type))],
         semanticEvents: observed.semantic.length,
         screenEvents: observed.screen.length,
         committedEvents: observed.committed.length,
@@ -121,12 +127,74 @@ async function main() {
         sessionID,
         ownerEvents: ownerObserved.semantic.length,
         attachedEvents: attachedObserved.semantic.length,
+        ownerRawTypes: [...new Set(ownerObserved.raw.map(event => event.type))],
         answer: attachedObserved.assistantText,
       }
     } finally {
       if (attached) await attached.stop()
       await owner.stop()
     }
+  })
+
+  await runCase('permission-service-synthetic', async () => {
+    const calls = []
+    const fakeFetch = async (url, init) => {
+      calls.push({ url: String(url), init })
+      return new Response('{}', {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    }
+    const sync = new SyncClient({
+      baseUrl: 'http://127.0.0.1:4096',
+      cwd: REPO_ROOT,
+      fetch: fakeFetch,
+    })
+    const service = new PermissionService(sync)
+    const seen = []
+    service.on('asked', req => seen.push({ type: 'asked', req }))
+    service.on('replied', reply => seen.push({ type: 'replied', reply }))
+    service.remember({
+      requestID: 'perm_test_1',
+      sessionID: 'ses_test',
+      title: 'edit index.html',
+      metadata: { tool: 'edit' },
+    })
+    await service.approveOnce('perm_test_1')
+    assert(service.getPending().length === 0, 'permission should be removed after reply')
+    assert(calls.length === 1, 'permission reply should issue one HTTP call')
+    assert(
+      calls[0].url.endsWith('/permission/perm_test_1/reply'),
+      'permission reply should hit the OpenCode reply endpoint',
+    )
+    assert(
+      JSON.parse(calls[0].init.body).reply === 'once',
+      'permission reply payload should approve once',
+    )
+    return { seen, calls: calls.map(call => ({ url: call.url, body: call.init.body })) }
+  })
+
+  await runCase('permission-dispatch-synthetic', async () => {
+    const semantic = new RecordingChannel()
+    const screen = new RecordingChannel()
+    const committed = new RecordingChannel()
+    const dispatcher = new EventDispatcher({ semantic, screen, committed })
+    dispatcher.dispatch({
+      type: 'permission.asked',
+      properties: {
+        requestID: 'perm_dispatch_1',
+        sessionID: 'ses_dispatch',
+        title: 'write styles.css',
+      },
+    })
+    const permission = screen.events.find(event => event[0] === 'permission')?.[1]
+    assert(permission, 'permission dispatch should publish a screen permission event')
+    assert(permission.state.visible === true, 'permission should be visible')
+    assert(
+      permission.state.requestID === 'perm_dispatch_1',
+      'permission should preserve request id',
+    )
+    return { permission }
   })
 
   await runCase('realistic-file-edit', async () => {
@@ -176,6 +244,7 @@ async function main() {
         screenEvents: observed.screen.length,
         committedEvents: observed.committed.length,
         toolSignals: observed.toolSignals,
+        rawEventTypes: [...new Set(observed.raw.map(event => event.type))],
         htmlBytes: Buffer.byteLength(html),
         cssBytes: Buffer.byteLength(css),
       }
@@ -212,6 +281,7 @@ function observe(oc) {
     semantic: [],
     screen: [],
     committed: [],
+    raw: [],
     unknownEvents: [],
     toolSignals: [],
     sseErrors: [],
@@ -246,6 +316,10 @@ function observe(oc) {
 
   oc.on('sse-error', err => {
     state.sseErrors.push(err.message)
+  })
+
+  oc.on('raw', event => {
+    state.raw.push(event)
   })
 
   oc.on('permission', req => {
@@ -331,6 +405,43 @@ async function prepareWorkspace() {
 
 function assert(condition, message) {
   if (!condition) throw new Error(message)
+}
+
+class RecordingChannel {
+  events = []
+  publishPermission(state) {
+    const ev = { type: 'permission', state, ts: Date.now() }
+    this.emit('permission', ev)
+    this.emit('event', ev)
+  }
+  publishActivity(params) {
+    const ev = { type: 'activity', ...params, ts: Date.now() }
+    this.emit('activity', ev)
+    this.emit('event', ev)
+  }
+  publishCompaction(state) {
+    const ev = { type: 'compaction', state, ts: Date.now() }
+    this.emit('compaction', ev)
+    this.emit('event', ev)
+  }
+  publishMessage(...args) {
+    this.emit('message', args)
+  }
+  publish(...args) {
+    this.emit('publish', args)
+  }
+  publishTurnStarted(ev) {
+    this.emit('turn_started', ev)
+  }
+  publishTurnDelta(ev) {
+    this.emit('turn_delta', ev)
+  }
+  publishTurnCompleted(ev) {
+    this.emit('turn_completed', ev)
+  }
+  emit(...args) {
+    this.events.push(args)
+  }
 }
 
 main().catch(err => {
