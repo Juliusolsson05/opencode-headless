@@ -92,8 +92,11 @@ export {
 } from './transport/SseClient.js'
 export {
   SyncClient,
+  type ModelSelection,
   type PermissionReply,
   type PromptOptions,
+  type QuestionAnswer,
+  type QueryValue,
   type SyncClientOptions,
 } from './transport/SyncClient.js'
 export {

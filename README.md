@@ -30,6 +30,9 @@ bus for live events.
 - starts `opencode serve`, or attaches to an existing server URL
 - subscribes to `/event`
 - creates and prompts sessions through HTTP
+- supports OpenCode-native helpers for model/agent selection, shell/command,
+  questions, permissions, provider/config discovery, file search/content, VCS,
+  MCP, LSP, formatter, and instance metadata
 - replies to structured permission requests
 - publishes the same three conceptual channels as the other headless packages:
   - `semantic` - live model/tool activity
@@ -67,7 +70,11 @@ oc.on('raw', ev => {
 })
 
 await oc.start()
-await oc.prompt({ prompt: 'Summarize this repository.' })
+await oc.prompt({
+  prompt: 'Summarize this repository.',
+  providerID: 'openai',
+  modelID: 'gpt-5.4',
+})
 ```
 
 Attach mode:
@@ -87,6 +94,19 @@ oc.on('permission', async req => {
   await oc.permissionService.approveOnce(req.requestID)
 })
 ```
+
+OpenCode-native helpers:
+
+```ts
+const providers = await oc.client.listProviders()
+const agents = await oc.client.listAgents()
+const matches = await oc.client.findFile('package', { type: 'file', limit: 20 })
+await oc.shell('git status --short', { agent: 'build' })
+```
+
+The `client` getter is intentionally public. Agent Code should use the generic
+channels for cross-provider behavior, but OpenCode has real native capabilities
+that should stay available instead of being flattened into the shared surface.
 
 ## Authentication
 
@@ -123,6 +143,6 @@ npm --prefix packages/opencode-headless run test:live
 ```
 
 It covers server startup/auth, prompt streaming, attach mode, multi-turn
-follow-up, permission service paths, committed history, and a realistic
-HTML/CSS file-edit task in
+follow-up, permission/question/native HTTP paths, committed history, and a
+realistic HTML/CSS/JSON file-edit-and-repair task in
 `/Users/juliusolsson/Desktop/Development/testing/opencode-work`.

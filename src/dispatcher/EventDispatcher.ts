@@ -74,6 +74,58 @@ export class EventDispatcher {
           status: `model:${getString(payload, ['model.id', 'modelID']) ?? 'unknown'}`,
         })
         return
+      case 'session.next.prompted':
+      case 'session.next.synthetic':
+        this.screen.publishSystem({
+          category: 'command',
+          action: type,
+          sessionID: this.eventSessionID(payload),
+          message: getString(payload, ['prompt.text', 'text']),
+          metadata: payload,
+        })
+        return
+      case 'session.next.shell.started':
+      case 'session.next.shell.ended':
+        this.handleNextShell(type, payload)
+        return
+      case 'session.next.step.started':
+      case 'session.next.step.ended':
+      case 'session.next.step.failed':
+        this.handleNextStep(type, payload)
+        return
+      case 'session.next.text.started':
+      case 'session.next.text.delta':
+      case 'session.next.text.ended':
+        this.handleNextText(type, payload)
+        return
+      case 'session.next.reasoning.started':
+      case 'session.next.reasoning.delta':
+      case 'session.next.reasoning.ended':
+        this.handleNextReasoning(type, payload)
+        return
+      case 'session.next.tool.input.started':
+      case 'session.next.tool.input.delta':
+      case 'session.next.tool.input.ended':
+      case 'session.next.tool.called':
+      case 'session.next.tool.progress':
+      case 'session.next.tool.success':
+      case 'session.next.tool.failed':
+        this.handleNextTool(type, payload)
+        return
+      case 'session.next.retried':
+        this.screen.publishSystem({
+          category: 'command',
+          action: type,
+          sessionID: this.eventSessionID(payload),
+          message: getString(payload, ['error.message']),
+          metadata: payload,
+        })
+        return
+      case 'session.next.compaction.started':
+      case 'session.next.compaction.delta':
+      case 'session.next.compaction.ended':
+        this.handleNextCompaction(type, payload)
+        return
 
       case 'session.status':
         this.handleSessionStatus(payload)
@@ -480,6 +532,213 @@ export class EventDispatcher {
       fullInput: full,
       source: 'opencode-sse',
       ts: Date.now(),
+    })
+  }
+
+  private handleNextShell(type: string, payload: unknown): void {
+    const sessionID = this.eventSessionID(payload)
+    const blockId = getString(payload, ['callID']) ?? stableID('shell')
+    if (type.endsWith('.ended')) {
+      this.semantic.publish({
+        type: 'tool_result',
+        turnId: sessionID,
+        toolUseId: blockId,
+        name: 'shell',
+        content: getString(payload, ['output']) ?? '',
+        isError: false,
+        source: 'opencode-sse',
+        ts: Date.now(),
+      })
+      this.semantic.publish({
+        type: 'block_completed',
+        turnId: sessionID,
+        blockId,
+        kind: 'tool',
+        name: 'shell',
+        source: 'opencode-sse',
+        ts: Date.now(),
+      })
+    } else {
+      this.semantic.publish({
+        type: 'block_started',
+        turnId: sessionID,
+        blockId,
+        kind: 'tool',
+        name: 'shell',
+        source: 'opencode-sse',
+        ts: Date.now(),
+      })
+    }
+    this.screen.publishSystem({
+      category: 'command',
+      action: type,
+      sessionID,
+      message: getString(payload, ['command', 'output']),
+      metadata: payload,
+    })
+  }
+
+  private handleNextStep(type: string, payload: unknown): void {
+    const usage = getUnknown(payload, ['tokens'])
+    if (usage) {
+      this.semantic.publish({
+        type: 'usage_updated',
+        turnId: this.eventSessionID(payload),
+        usage,
+        source: 'opencode-sse',
+        ts: Date.now(),
+      })
+    }
+    this.screen.publishSystem({
+      category: 'command',
+      action: type,
+      sessionID: this.eventSessionID(payload),
+      message: getString(payload, ['finish', 'error.message', 'agent']),
+      metadata: payload,
+    })
+  }
+
+  private handleNextText(type: string, payload: unknown): void {
+    const turnId = this.eventSessionID(payload)
+    const blockId = `${turnId}:next-text`
+    if (type.endsWith('.started')) {
+      this.semantic.publish({
+        type: 'block_started',
+        turnId,
+        blockId,
+        kind: 'text',
+        source: 'opencode-sse',
+        ts: Date.now(),
+      })
+      return
+    }
+    const delta = getString(payload, ['delta', 'text']) ?? ''
+    const full = type.endsWith('.ended') ? delta : this.accumulator.applyDelta(blockId, 'text', delta)
+    if (delta) {
+      this.semantic.publish({
+        type: 'text_delta',
+        turnId,
+        blockId,
+        textDelta: delta,
+        fullText: full,
+        source: 'opencode-sse',
+        ts: Date.now(),
+      })
+    }
+    if (type.endsWith('.ended')) {
+      this.semantic.publish({
+        type: 'block_completed',
+        turnId,
+        blockId,
+        kind: 'text',
+        source: 'opencode-sse',
+        ts: Date.now(),
+      })
+    }
+  }
+
+  private handleNextReasoning(type: string, payload: unknown): void {
+    const turnId = this.eventSessionID(payload)
+    const blockId = getString(payload, ['reasoningID']) ?? `${turnId}:next-reasoning`
+    if (type.endsWith('.started')) {
+      this.semantic.publish({
+        type: 'block_started',
+        turnId,
+        blockId,
+        kind: 'reasoning',
+        source: 'opencode-sse',
+        ts: Date.now(),
+      })
+      return
+    }
+    const delta = getString(payload, ['delta', 'text']) ?? ''
+    const full = type.endsWith('.ended') ? delta : this.accumulator.applyDelta(blockId, 'text', delta)
+    if (delta) {
+      this.semantic.publish({
+        type: 'thinking_delta',
+        turnId,
+        blockId,
+        textDelta: delta,
+        fullText: full,
+        source: 'opencode-sse',
+        ts: Date.now(),
+      })
+    }
+  }
+
+  private handleNextTool(type: string, payload: unknown): void {
+    const turnId = this.eventSessionID(payload)
+    const blockId = getString(payload, ['callID']) ?? stableID('tool')
+    const name = getString(payload, ['name', 'tool'])
+    if (type.endsWith('.input.started') || type.endsWith('.called')) {
+      this.semantic.publish({
+        type: 'block_started',
+        turnId,
+        blockId,
+        kind: 'tool',
+        name,
+        source: 'opencode-sse',
+        ts: Date.now(),
+      })
+    }
+    if (type.endsWith('.input.delta')) {
+      const delta = getString(payload, ['delta']) ?? ''
+      const full = this.accumulator.applyDelta(blockId, 'input', delta)
+      this.semantic.publish({
+        type: 'tool_input_delta',
+        turnId,
+        blockId,
+        inputDelta: delta,
+        fullInput: full,
+        name,
+        source: 'opencode-sse',
+        ts: Date.now(),
+      })
+      return
+    }
+    const input = getUnknown(payload, ['input'])
+    if (type.endsWith('.called') && input !== undefined) {
+      this.semantic.publish({
+        type: 'tool_input_finalized',
+        turnId,
+        blockId,
+        input,
+        name,
+        source: 'opencode-sse',
+        ts: Date.now(),
+      })
+    }
+    if (type.endsWith('.success') || type.endsWith('.failed') || type.endsWith('.progress')) {
+      const content = getTextValue(payload, ['content', 'structured', 'error.message']) ?? ''
+      this.semantic.publish({
+        type: 'tool_result',
+        turnId,
+        toolUseId: blockId,
+        name,
+        content,
+        isError: type.endsWith('.failed'),
+        source: 'opencode-sse',
+        ts: Date.now(),
+      })
+    }
+    if (type.endsWith('.success') || type.endsWith('.failed')) {
+      this.semantic.publish({
+        type: 'block_completed',
+        turnId,
+        blockId,
+        kind: 'tool',
+        name,
+        source: 'opencode-sse',
+        ts: Date.now(),
+      })
+    }
+  }
+
+  private handleNextCompaction(type: string, payload: unknown): void {
+    this.screen.publishCompaction({
+      active: !type.endsWith('.ended'),
+      sessionID: this.eventSessionID(payload),
+      metadata: payload,
     })
   }
 

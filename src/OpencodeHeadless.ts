@@ -10,7 +10,12 @@ import { PermissionService, type OpenCodePermissionRequest } from './permissions
 import { HistoryClient } from './transcript/HistoryClient.js'
 import { SpawnedServer } from './transport/SpawnedServer.js'
 import { SseClient, type SseMessage } from './transport/SseClient.js'
-import { SyncClient, type PromptOptions } from './transport/SyncClient.js'
+import {
+  SyncClient,
+  type ModelSelection,
+  type PromptOptions,
+  type QuestionAnswer,
+} from './transport/SyncClient.js'
 
 export type OpencodeHeadlessMode = 'spawn' | 'attach'
 
@@ -176,6 +181,31 @@ export class OpencodeHeadless extends EventEmitter {
   async command(command: string, sessionID = this.sessionID): Promise<unknown> {
     if (!sessionID) throw new Error('No OpenCode session is active')
     return await this.client.command(sessionID, command)
+  }
+
+  async shell(
+    command: string,
+    opts: { sessionID?: string; agent?: string } & ModelSelection = {},
+  ): Promise<unknown> {
+    const sessionID = opts.sessionID ?? this.sessionID
+    if (!sessionID) throw new Error('No OpenCode session is active')
+    return await this.client.shell(sessionID, command, opts)
+  }
+
+  async listPermissions(): Promise<unknown[]> {
+    return await this.client.listPermissions()
+  }
+
+  async listQuestions(): Promise<unknown[]> {
+    return await this.client.listQuestions()
+  }
+
+  async replyQuestion(requestID: string, answers: QuestionAnswer[]): Promise<unknown> {
+    return await this.client.replyQuestion(requestID, answers)
+  }
+
+  async rejectQuestion(requestID: string): Promise<unknown> {
+    return await this.client.rejectQuestion(requestID)
   }
 
   async abort(sessionID = this.sessionID): Promise<unknown> {

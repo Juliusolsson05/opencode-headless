@@ -104,10 +104,42 @@ the raw envelope in `metadata`.
 
 Current mapping:
 
-- `semantic`: text/reasoning/tool/message/session errors and lifecycle
+- `semantic`: text/reasoning/tool/message/session errors and lifecycle,
+  including both legacy `message.part.*` and newer `session.next.*` semantic
+  stream events
 - `screen`: activity, permissions, questions, compaction, file events, generic
   operational system events
 - `committed`: durable message history fetched from `/session/{id}/message`
+
+## Native OpenCode surface
+
+OpenCode has native capabilities that do not fit cleanly into the shared
+provider contract. The wrapper should expose them deliberately through the
+`SyncClient` / `OpencodeHeadless.client` layer instead of forcing them into the
+semantic/screen/committed channels.
+
+Important route groups read so far:
+
+- `session.ts`: create/list/get/status/messages, prompt/prompt_async, command,
+  shell, fork, abort, summarize, share, revert/unrevert, delete/update parts,
+  and the deprecated session-scoped permission response route
+- `permission.ts`: list pending permission requests and reply by request id
+- `question.ts`: list, reply, and reject model questions
+- `sync.ts`: start workspace sync, replay event streams, steal a session into a
+  workspace, and fetch sync history
+- `provider.ts`: list providers, read auth methods, and run provider OAuth
+  authorize/callback
+- `instance.ts`: path metadata, VCS info/status/diff/apply, commands, agents,
+  skills, LSP status, and formatter status
+- `file.ts`: ripgrep text search, file search, symbol search, directory list,
+  file content, and file status
+- `mcp.ts`: MCP status, dynamic add, OAuth, connect, and disconnect
+
+Model switching is prompt-time model selection in the current HTTP contract:
+`SessionPrompt.PromptInput.model` and `SessionPrompt.ShellInput.model` are
+`{ providerID, modelID }`. The live stream then emits
+`session.next.model.switched`. There is no separate generic "switch model"
+endpoint in the audited source.
 
 ## Known follow-up reads
 
@@ -121,3 +153,9 @@ Current mapping:
 - `packages/opencode/src/server/routes/instance/httpapi/groups/permission.ts`
 - `packages/opencode/src/server/routes/instance/httpapi/groups/question.ts`
 - `packages/opencode/src/server/routes/instance/httpapi/handlers/sync.ts`
+- `packages/opencode/src/server/routes/instance/httpapi/groups/config.ts`
+- `packages/opencode/src/server/routes/instance/httpapi/groups/project.ts`
+- `packages/opencode/src/server/routes/instance/httpapi/groups/workspace.ts`
+- `packages/opencode/src/server/routes/instance/httpapi/groups/pty.ts`
+- `packages/opencode/src/server/routes/instance/httpapi/groups/tui.ts`
+- `packages/opencode/src/server/routes/instance/httpapi/groups/v2/*.ts`

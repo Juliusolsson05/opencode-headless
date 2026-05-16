@@ -225,6 +225,75 @@ async function main() {
     return { system }
   })
 
+  await runCase('session-next-dispatch-synthetic', async () => {
+    const semantic = new RecordingChannel()
+    const screen = new RecordingChannel()
+    const committed = new RecordingChannel()
+    const dispatcher = new EventDispatcher({ semantic, screen, committed })
+    dispatcher.dispatch({
+      type: 'session.next.text.delta',
+      properties: {
+        sessionID: 'ses_next',
+        delta: 'Hello',
+      },
+    })
+    dispatcher.dispatch({
+      type: 'session.next.reasoning.delta',
+      properties: {
+        sessionID: 'ses_next',
+        reasoningID: 'reason_next',
+        delta: 'Thinking',
+      },
+    })
+    dispatcher.dispatch({
+      type: 'session.next.tool.called',
+      properties: {
+        sessionID: 'ses_next',
+        callID: 'tool_next',
+        tool: 'bash',
+        input: { command: 'pwd' },
+      },
+    })
+    dispatcher.dispatch({
+      type: 'session.next.tool.success',
+      properties: {
+        sessionID: 'ses_next',
+        callID: 'tool_next',
+        tool: 'bash',
+        content: [{ type: 'text', text: '/tmp' }],
+      },
+    })
+    dispatcher.dispatch({
+      type: 'session.next.compaction.started',
+      properties: {
+        sessionID: 'ses_next',
+        reason: 'manual',
+      },
+    })
+    const published = semantic.events
+      .filter(event => event[0] === 'publish')
+      .map(event => event[1][0])
+    const compaction = screen.events.find(event => event[0] === 'compaction')?.[1]
+    assert(
+      published.some(event => event.type === 'text_delta' && event.textDelta === 'Hello'),
+      'session.next text delta should map to semantic text',
+    )
+    assert(
+      published.some(event => event.type === 'thinking_delta' && event.textDelta === 'Thinking'),
+      'session.next reasoning delta should map to semantic thinking',
+    )
+    assert(
+      published.some(event => event.type === 'tool_input_finalized'),
+      'session.next tool called should finalize tool input',
+    )
+    assert(
+      published.some(event => event.type === 'tool_result' && event.isError === false),
+      'session.next tool success should map to tool result',
+    )
+    assert(compaction?.state.active === true, 'session.next compaction should publish screen compaction')
+    return { published, compaction }
+  })
+
   await runCase('source-event-union-audit', async () => {
     const source = await readFile(SDK_TYPES, 'utf8')
     const union = source.match(/export type Event =\n(?<body>(?:  \| Event[^\n]+\n)+)/)?.groups?.body
@@ -251,6 +320,125 @@ async function main() {
       eventCount: eventTypes.length,
       required,
     }
+  })
+
+  await runCase('native-http-contract-synthetic', async () => {
+    const calls = []
+    const fakeFetch = async (url, init = {}) => {
+      calls.push({ url: String(url), init })
+      const path = new URL(String(url)).pathname
+      const body = [
+        '/permission',
+        '/question',
+        '/command',
+        '/agent',
+        '/find/file',
+        '/file/status',
+        '/pty/shells',
+        '/experimental/workspace',
+        '/api/model',
+      ].includes(path)
+        ? '[]'
+        : '{}'
+      return new Response(body, {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    }
+    const sync = new SyncClient({
+      baseUrl: 'http://127.0.0.1:4096',
+      cwd: WORKSPACE,
+      fetch: fakeFetch,
+    })
+    await sync.prompt({
+      sessionID: 'ses_native',
+      prompt: 'target model',
+      providerID: 'openai',
+      modelID: 'gpt-5.4',
+    })
+    await sync.prompt({
+      sessionID: 'ses_native',
+      prompt: 'slash model',
+      model: 'anthropic/claude-sonnet-4-5',
+    })
+    await sync.command('ses_native', 'do-thing')
+    await sync.shell('ses_native', 'printf ok', {
+      agent: 'build',
+      providerID: 'openai',
+      modelID: 'gpt-5.4',
+    })
+    await sync.getPaths()
+    await sync.listProviders()
+    await sync.listAgents()
+    await sync.findFile('index', { type: 'file', limit: 20 })
+    await sync.readFileContent('index.html')
+    await sync.getFileStatus()
+    await sync.getMcpStatus()
+    await sync.listPtyShells()
+    await sync.openTuiModels()
+    await sync.listWorkspaces()
+    await sync.listV2Models()
+    await sync.listPermissions()
+    await sync.listQuestions()
+    await sync.replyQuestion('question_native', [['Yes']])
+    await sync.rejectQuestion('question_native')
+
+    const bodies = calls.map(call => ({
+      path: new URL(call.url).pathname,
+      body: call.init.body ? JSON.parse(call.init.body) : undefined,
+      cwd: call.init.headers?.['x-opencode-directory'],
+    }))
+    assert(
+      bodies[0].body.model.providerID === 'openai' && bodies[0].body.model.modelID === 'gpt-5.4',
+      'prompt should serialize explicit model as OpenCode ModelRef',
+    )
+    assert(
+      bodies[1].body.model.providerID === 'anthropic' &&
+        bodies[1].body.model.modelID === 'claude-sonnet-4-5',
+      'prompt should parse provider/model shorthand into OpenCode ModelRef',
+    )
+    assert(
+      bodies.some(entry => entry.path === '/session/ses_native/command' && entry.body.arguments === ''),
+      'command should include OpenCode command arguments field',
+    )
+    assert(
+      bodies.some(entry => entry.path === '/session/ses_native/shell' && entry.body.command === 'printf ok'),
+      'shell should call OpenCode native shell endpoint',
+    )
+    assert(
+      bodies.some(
+        entry =>
+          entry.path === '/session/ses_native/shell' &&
+          entry.body.model.providerID === 'openai' &&
+          entry.body.model.modelID === 'gpt-5.4',
+      ),
+      'shell should serialize model selection as OpenCode ModelRef',
+    )
+    assert(
+      bodies.some(entry => entry.path === '/question/question_native/reply'),
+      'question reply should call OpenCode native question endpoint',
+    )
+    assert(
+      calls.some(call => String(call.url).includes('/find/file?query=index&type=file&limit=20')),
+      'file search helper should serialize OpenCode file query parameters',
+    )
+    assert(
+      calls.some(call => String(call.url).includes('/file/content?path=index.html')),
+      'file content helper should serialize OpenCode file path parameter',
+    )
+    assert(
+      calls.some(call => new URL(String(call.url)).pathname === '/tui/open-models'),
+      'TUI model dialog helper should call the native OpenCode TUI route',
+    )
+    assert(
+      calls.some(call => new URL(String(call.url)).pathname === '/api/model'),
+      'v2 model helper should call the native OpenCode v2 model route',
+    )
+    assert(
+      bodies.every(entry => entry.cwd === WORKSPACE),
+      'native requests should preserve workspace routing header',
+    )
+    return { bodies }
   })
 
   await runCase('agentic-multiturn-repair', async () => {
@@ -292,6 +480,43 @@ async function main() {
       })
       await waitForIdle(ownerObserved)
 
+      let html = await readFile(join(WORKSPACE, 'index.html'), 'utf8')
+      let css = await readFile(join(WORKSPACE, 'styles.css'), 'utf8')
+      let checklist = JSON.parse(await readFile(join(WORKSPACE, 'checklist.json'), 'utf8'))
+      if (
+        !html.includes('Operational clarity for growing teams') ||
+        checklist.phase !== 2 ||
+        checklist.needsFollowup !== false ||
+        checklist.verified !== true
+      ) {
+        // WHY this case performs a real corrective turn instead of failing
+        // immediately:
+        // The package is meant to support Agent Code's long-running agentic
+        // loop, where the host verifies externally observable state and feeds
+        // mistakes back into the provider. A model that claims completion
+        // before the filesystem matches the claim is exactly the class of
+        // behavior this temporary harness should exercise.
+        await owner.prompt({
+          prompt: [
+            'External verification found the previous repair incomplete.',
+            `index.html contains required value prop: ${html.includes('Operational clarity for growing teams')}`,
+            `checklist state: ${JSON.stringify(checklist)}`,
+            'Use bash with node -e to make the filesystem match the requirements now.',
+            'index.html must contain the exact text "Operational clarity for growing teams".',
+            'checklist.json must be exactly {"phase":2,"needsFollowup":false,"verified":true} except whitespace.',
+            'After re-reading both files and confirming the state, reply exactly: CORRECTION_DONE',
+          ].join('\n'),
+        })
+        await waitFor(() => ownerObserved.assistantText.includes('CORRECTION_DONE'), {
+          label: 'correction completion marker',
+          observed: ownerObserved,
+        })
+        await waitForIdle(ownerObserved)
+        html = await readFile(join(WORKSPACE, 'index.html'), 'utf8')
+        css = await readFile(join(WORKSPACE, 'styles.css'), 'utf8')
+        checklist = JSON.parse(await readFile(join(WORKSPACE, 'checklist.json'), 'utf8'))
+      }
+
       attached = new OpencodeHeadless({
         mode: 'attach',
         serverUrl: owner.serverUrl,
@@ -315,9 +540,6 @@ async function main() {
       })
       await waitForIdle(attachedObserved)
 
-      const html = await readFile(join(WORKSPACE, 'index.html'), 'utf8')
-      const css = await readFile(join(WORKSPACE, 'styles.css'), 'utf8')
-      const checklist = JSON.parse(await readFile(join(WORKSPACE, 'checklist.json'), 'utf8'))
       assert(html.includes('Northstar Analytics'), 'multi-turn html should keep product name')
       assert(
         html.includes('Operational clarity for growing teams'),
@@ -402,7 +624,7 @@ function observe(oc) {
 
   oc.screen.on('event', event => {
     state.screen.push(event)
-    if (event.type === 'activity' && event.active === false) state.idle = true
+    if (event.type === 'activity') state.idle = event.active === false
     if (event.type === 'file') state.fileEvents.push(event)
   })
 
