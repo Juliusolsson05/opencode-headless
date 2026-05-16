@@ -18,6 +18,7 @@ bus for live events.
   - `semantic` - live model/tool activity
   - `screen` - synthetic visible/overlay state such as activity and permissions
   - `committed` - durable session history fetched from OpenCode
+- emits every raw OpenCode SSE bus envelope on the top-level `raw` event
 
 ## What it does not do
 
@@ -42,6 +43,10 @@ oc.semantic.on('turn_delta', ev => {
 
 oc.screen.on('permission', ev => {
   console.log('permission requested', ev.state.requestID)
+})
+
+oc.on('raw', ev => {
+  console.debug('opencode event', ev.type)
 })
 
 await oc.start()
@@ -90,3 +95,17 @@ The first implementation uses direct `fetch` calls instead of depending on
 OpenCode version is still being validated. The HTTP paths are centralized in
 `src/transport/SyncClient.ts`, so moving to the generated SDK later should be a
 small mechanical change.
+
+## Live harness
+
+The temporary `testing/` folder contains an agentic harness that runs against a
+real local OpenCode install and the current user's provider auth:
+
+```sh
+npm --prefix packages/opencode-headless run test:live
+```
+
+It covers server startup/auth, prompt streaming, attach mode, multi-turn
+follow-up, permission service paths, committed history, and a realistic
+HTML/CSS file-edit task in
+`/Users/juliusolsson/Desktop/Development/testing/opencode-work`.

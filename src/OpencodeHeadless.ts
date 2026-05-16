@@ -38,6 +38,7 @@ export type OpencodePromptInput = Omit<PromptOptions, 'sessionID'> & {
 export type OpencodeHeadlessEvent =
   | { type: 'ready'; ts: number; url: string; sessionID: string | null }
   | { type: 'session'; ts: number; sessionID: string }
+  | { type: 'raw'; ts: number; event: OpenCodeBusEvent }
   | { type: 'semantic'; ts: number; event: SemanticEvent }
   | { type: 'screen'; ts: number; event: ScreenEvent }
   | { type: 'committed'; ts: number; event: CommittedEvent }
@@ -49,6 +50,7 @@ export type OpencodeHeadlessEvents = {
   event: [OpencodeHeadlessEvent]
   ready: [{ url: string; sessionID: string | null }]
   session: [string]
+  raw: [OpenCodeBusEvent]
   permission: [OpenCodePermissionRequest]
   'sse-error': [Error]
   exit: [{ exitCode: number | null; signal: NodeJS.Signals | null }]
@@ -253,6 +255,8 @@ export class OpencodeHeadless extends EventEmitter {
     }
     const event = normalizeBusEvent(parsed, msg.event)
     if (!event || !this.dispatcher) return
+    this.emit('raw', event)
+    this.emit('event', { type: 'raw', ts: Date.now(), event })
     if (event.type === 'session.created' || event.type === 'session.updated') {
       const id = extractSessionIDFromEvent(event)
       if (id) this.setSessionID(id)
