@@ -8,6 +8,7 @@ export type SyncClientOptions = {
 export type PromptOptions = {
   sessionID: string
   prompt: string
+  messageID?: string
   agent?: string
   model?: string
   modelID?: string
@@ -15,6 +16,11 @@ export type PromptOptions = {
   mode?: string
   parts?: unknown[]
   async?: boolean
+  noReply?: boolean
+  tools?: Record<string, boolean>
+  format?: unknown
+  system?: string
+  variant?: string
 }
 
 export type PermissionReply = 'once' | 'always' | 'reject'
@@ -81,12 +87,50 @@ export class SyncClient {
     return await this.request('/provider/auth')
   }
 
+  async authorizeProvider(providerID: string, input: unknown): Promise<unknown> {
+    return await this.request(`/provider/${encodeURIComponent(providerID)}/oauth/authorize`, {
+      method: 'POST',
+      body: input,
+    })
+  }
+
+  async callbackProvider(providerID: string, input: unknown): Promise<unknown> {
+    return await this.request(`/provider/${encodeURIComponent(providerID)}/oauth/callback`, {
+      method: 'POST',
+      body: input,
+    })
+  }
+
   async getConfig(): Promise<unknown> {
     return await this.request('/config')
   }
 
+  async updateConfig(input: unknown): Promise<unknown> {
+    return await this.request('/config', { method: 'PATCH', body: input })
+  }
+
   async getProviderConfig(): Promise<unknown> {
     return await this.request('/config/providers')
+  }
+
+  async listProjects(): Promise<unknown[]> {
+    const data = await this.request('/project')
+    return Array.isArray(data) ? data : []
+  }
+
+  async getCurrentProject(): Promise<unknown> {
+    return await this.request('/project/current')
+  }
+
+  async initProjectGit(): Promise<unknown> {
+    return await this.request('/project/git/init', { method: 'POST', body: {} })
+  }
+
+  async updateProject(projectID: string, input: unknown): Promise<unknown> {
+    return await this.request(`/project/${encodeURIComponent(projectID)}`, {
+      method: 'PATCH',
+      body: input,
+    })
   }
 
   async listCommands(): Promise<unknown[]> {
@@ -130,6 +174,10 @@ export class SyncClient {
 
   async getVcsDiffRaw(): Promise<unknown> {
     return await this.request('/vcs/diff/raw')
+  }
+
+  async applyVcsPatch(input: unknown): Promise<unknown> {
+    return await this.request('/vcs/apply', { method: 'POST', body: input })
   }
 
   async findText(pattern: string): Promise<unknown[]> {
@@ -197,6 +245,28 @@ export class SyncClient {
     return await this.request(`/mcp/${encodeURIComponent(name)}/disconnect`, { method: 'POST', body: {} })
   }
 
+  async startMcpAuth(name: string): Promise<unknown> {
+    return await this.request(`/mcp/${encodeURIComponent(name)}/auth`, { method: 'POST', body: {} })
+  }
+
+  async callbackMcpAuth(name: string, code: string): Promise<unknown> {
+    return await this.request(`/mcp/${encodeURIComponent(name)}/auth/callback`, {
+      method: 'POST',
+      body: { code },
+    })
+  }
+
+  async authenticateMcp(name: string): Promise<unknown> {
+    return await this.request(`/mcp/${encodeURIComponent(name)}/auth/authenticate`, {
+      method: 'POST',
+      body: {},
+    })
+  }
+
+  async removeMcpAuth(name: string): Promise<unknown> {
+    return await this.request(`/mcp/${encodeURIComponent(name)}/auth`, { method: 'DELETE' })
+  }
+
   async listPtyShells(): Promise<unknown[]> {
     const data = await this.request('/pty/shells')
     return Array.isArray(data) ? data : []
@@ -227,6 +297,7 @@ export class SyncClient {
     return await this.request(`/pty/${encodeURIComponent(ptyID)}/connect-token`, {
       method: 'POST',
       body: {},
+      headers: { 'x-opencode-ticket': '1' },
     })
   }
 
@@ -343,6 +414,10 @@ export class SyncClient {
     return Array.isArray(data) ? data : []
   }
 
+  async messagesV2(sessionID: string, query: Record<string, QueryValue> = {}): Promise<unknown> {
+    return await this.request(`/api/session/${encodeURIComponent(sessionID)}/message`, { query })
+  }
+
   async listV2Models(query: Record<string, QueryValue> = {}): Promise<unknown[]> {
     const data = await this.request('/api/model', { query })
     return Array.isArray(data) ? data : []
@@ -355,6 +430,52 @@ export class SyncClient {
 
   async getV2Provider(providerID: string, query: Record<string, QueryValue> = {}): Promise<unknown> {
     return await this.request(`/api/provider/${encodeURIComponent(providerID)}`, { query })
+  }
+
+  async getExperimentalConsole(): Promise<unknown> {
+    return await this.request('/experimental/console')
+  }
+
+  async getExperimentalConsoleOrgs(): Promise<unknown> {
+    return await this.request('/experimental/console/orgs')
+  }
+
+  async switchExperimentalConsole(input: unknown): Promise<unknown> {
+    return await this.request('/experimental/console/switch', { method: 'POST', body: input })
+  }
+
+  async getExperimentalTools(provider: string, model: string): Promise<unknown> {
+    return await this.request('/experimental/tool', { query: { provider, model } })
+  }
+
+  async getExperimentalToolIDs(): Promise<unknown[]> {
+    const data = await this.request('/experimental/tool/ids')
+    return Array.isArray(data) ? data : []
+  }
+
+  async listExperimentalWorktrees(): Promise<unknown[]> {
+    const data = await this.request('/experimental/worktree')
+    return Array.isArray(data) ? data : []
+  }
+
+  async createExperimentalWorktree(input: unknown = {}): Promise<unknown> {
+    return await this.request('/experimental/worktree', { method: 'POST', body: input })
+  }
+
+  async removeExperimentalWorktree(directory: string): Promise<unknown> {
+    return await this.request('/experimental/worktree', { method: 'DELETE', body: { directory } })
+  }
+
+  async resetExperimentalWorktree(directory: string): Promise<unknown> {
+    return await this.request('/experimental/worktree/reset', { method: 'POST', body: { directory } })
+  }
+
+  async listExperimentalSessions(query: Record<string, QueryValue> = {}): Promise<unknown> {
+    return await this.request('/experimental/session', { query })
+  }
+
+  async getExperimentalResources(): Promise<unknown> {
+    return await this.request('/experimental/resource')
   }
 
   async messages(sessionID: string): Promise<unknown[]> {
@@ -431,13 +552,33 @@ export class SyncClient {
     })
   }
 
+  async startSync(): Promise<unknown> {
+    return await this.request('/sync/start', { method: 'POST', body: {} })
+  }
+
+  async replaySync(events: unknown[], directory?: string): Promise<unknown> {
+    return await this.request('/sync/replay', {
+      method: 'POST',
+      body: directory === undefined ? { events } : { events, directory },
+    })
+  }
+
+  async stealSyncSession(sessionID: string): Promise<unknown> {
+    return await this.request('/sync/steal', { method: 'POST', body: { sessionID } })
+  }
+
   async disposeInstance(): Promise<unknown> {
-    return await this.request('/instance', { method: 'DELETE' })
+    return await this.request('/instance/dispose', { method: 'POST', body: {} })
   }
 
   async request(
     path: string,
-    init: { method?: string; body?: unknown; query?: Record<string, QueryValue> } = {},
+    init: {
+      method?: string
+      body?: unknown
+      query?: Record<string, QueryValue>
+      headers?: Record<string, string>
+    } = {},
   ): Promise<unknown> {
     const url = new URL(path, this.baseUrl)
     for (const [key, value] of Object.entries(init.query ?? {})) {
@@ -445,6 +586,7 @@ export class SyncClient {
     }
     const headers = this.headers({
       Accept: 'application/json',
+      ...init.headers,
     })
     const reqInit: RequestInit = {
       method: init.method ?? 'GET',
@@ -487,6 +629,12 @@ function promptBody(opts: PromptOptions): Record<string, unknown> {
   const model = modelRef(opts)
   if (model) body.model = model
   if (opts.mode) body.mode = opts.mode
+  if (opts.messageID) body.messageID = opts.messageID
+  if (opts.noReply !== undefined) body.noReply = opts.noReply
+  if (opts.tools) body.tools = opts.tools
+  if (opts.format) body.format = opts.format
+  if (opts.system) body.system = opts.system
+  if (opts.variant) body.variant = opts.variant
   return body
 }
 

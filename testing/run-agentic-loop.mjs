@@ -332,11 +332,14 @@ async function main() {
         '/question',
         '/command',
         '/agent',
+        '/project',
         '/find/file',
         '/file/status',
         '/pty/shells',
         '/experimental/workspace',
         '/api/model',
+        '/experimental/tool/ids',
+        '/experimental/worktree',
       ].includes(path)
         ? '[]'
         : '{}'
@@ -355,6 +358,12 @@ async function main() {
       prompt: 'target model',
       providerID: 'openai',
       modelID: 'gpt-5.4',
+      messageID: 'msg_native',
+      noReply: true,
+      system: 'native system',
+      variant: 'default',
+      tools: { bash: true },
+      format: { type: 'text' },
     })
     await sync.prompt({
       sessionID: 'ses_native',
@@ -369,19 +378,38 @@ async function main() {
     })
     await sync.getPaths()
     await sync.listProviders()
+    await sync.getProviderAuthMethods()
+    await sync.getConfig()
+    await sync.getProviderConfig()
+    await sync.listProjects()
+    await sync.getCurrentProject()
     await sync.listAgents()
     await sync.findFile('index', { type: 'file', limit: 20 })
     await sync.readFileContent('index.html')
     await sync.getFileStatus()
+    await sync.getVcsStatus()
     await sync.getMcpStatus()
+    await sync.startMcpAuth('filesystem')
+    await sync.callbackMcpAuth('filesystem', 'oauth-code')
+    await sync.authenticateMcp('filesystem')
+    await sync.removeMcpAuth('filesystem')
     await sync.listPtyShells()
+    await sync.createPtyConnectToken('pty_native')
     await sync.openTuiModels()
     await sync.listWorkspaces()
     await sync.listV2Models()
+    await sync.messagesV2('ses_native', { limit: 20, order: 'desc' })
+    await sync.getExperimentalToolIDs()
+    await sync.listExperimentalWorktrees()
+    await sync.listExperimentalSessions({ limit: 20 })
+    await sync.getExperimentalResources()
     await sync.listPermissions()
     await sync.listQuestions()
     await sync.replyQuestion('question_native', [['Yes']])
     await sync.rejectQuestion('question_native')
+    await sync.startSync()
+    await sync.stealSyncSession('ses_native')
+    await sync.disposeInstance()
 
     const bodies = calls.map(call => ({
       path: new URL(call.url).pathname,
@@ -391,6 +419,13 @@ async function main() {
     assert(
       bodies[0].body.model.providerID === 'openai' && bodies[0].body.model.modelID === 'gpt-5.4',
       'prompt should serialize explicit model as OpenCode ModelRef',
+    )
+    assert(
+      bodies[0].body.messageID === 'msg_native' &&
+        bodies[0].body.noReply === true &&
+        bodies[0].body.system === 'native system' &&
+        bodies[0].body.tools.bash === true,
+      'prompt should preserve richer OpenCode PromptInput fields',
     )
     assert(
       bodies[1].body.model.providerID === 'anthropic' &&
@@ -433,6 +468,30 @@ async function main() {
     assert(
       calls.some(call => new URL(String(call.url)).pathname === '/api/model'),
       'v2 model helper should call the native OpenCode v2 model route',
+    )
+    assert(
+      calls.some(
+        call =>
+          new URL(String(call.url)).pathname === '/instance/dispose' &&
+          call.init.method === 'POST',
+      ),
+      'dispose helper should call the OpenCode instance dispose endpoint',
+    )
+    assert(
+      calls.some(
+        call =>
+          new URL(String(call.url)).pathname === '/pty/pty_native/connect-token' &&
+          call.init.headers?.['x-opencode-ticket'] === '1',
+      ),
+      'PTY connect token helper should send OpenCode ticket header',
+    )
+    assert(
+      calls.some(call => new URL(String(call.url)).pathname === '/mcp/filesystem/auth'),
+      'MCP OAuth helpers should call native auth routes',
+    )
+    assert(
+      calls.some(call => new URL(String(call.url)).pathname === '/api/session/ses_native/message'),
+      'v2 message helper should call the native v2 message route',
     )
     assert(
       bodies.every(entry => entry.cwd === WORKSPACE),
@@ -553,12 +612,28 @@ async function main() {
         attachedObserved.assistantText.includes('VERIFIED_TRUE'),
         'attached continuation should observe verified state',
       )
+      const foundHtml = await owner.client.findFile('index.html', { type: 'file', limit: 10 })
+      const nativeHtml = await owner.client.readFileContent('index.html')
+      const fileStatus = await owner.client.getFileStatus()
+      const providers = await owner.client.listProviders()
+      assert(
+        foundHtml.some(path => path.endsWith('index.html')),
+        'native file search should find the generated landing page',
+      )
+      assert(
+        JSON.stringify(nativeHtml).includes('Northstar Analytics'),
+        'native file content should include generated landing page text',
+      )
+      assert(Array.isArray(fileStatus), 'native file status should return an array')
+      assert(providers && typeof providers === 'object', 'native provider listing should return data')
       return {
         sessionID,
         ownerSemanticEvents: ownerObserved.semantic.length,
         ownerRawTypes: [...new Set(ownerObserved.raw.map(event => event.type))],
         ownerToolSignals: ownerObserved.toolSignals,
         ownerFileEvents: ownerObserved.fileEvents.length,
+        nativeFoundHtml: foundHtml,
+        nativeFileStatusCount: fileStatus.length,
         attachedSemanticEvents: attachedObserved.semantic.length,
         attachedAnswer: attachedObserved.assistantText,
         checklist,
