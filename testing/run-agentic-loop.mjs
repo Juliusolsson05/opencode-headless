@@ -10,7 +10,7 @@ import {
   SyncClient,
 } from '../dist/index.js'
 
-const REPO_ROOT = new URL('../../..', import.meta.url).pathname
+const REPO_ROOT = new URL('..', import.meta.url).pathname
 const WORKSPACE = '/Users/juliusolsson/Desktop/Development/testing/opencode-work'
 const SDK_TYPES = join(REPO_ROOT, 'vendor/opencode-src/packages/sdk/js/src/v2/gen/types.gen.ts')
 const DEFAULT_TIMEOUT_MS = 120_000

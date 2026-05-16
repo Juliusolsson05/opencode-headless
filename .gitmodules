@@ -1,0 +1,3 @@
+[submodule "vendor/opencode-src"]
+	path = vendor/opencode-src
+	url = https://github.com/sst/opencode.git
