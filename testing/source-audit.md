@@ -141,6 +141,19 @@ Model switching is prompt-time model selection in the current HTTP contract:
 `session.next.model.switched`. There is no separate generic "switch model"
 endpoint in the audited source.
 
+Handler confirmation:
+
+- `handlers/permission.ts` delegates list/reply directly to
+  `Permission.Service`, and reply returns `true` only after the service accepts
+  the request id, reply, and optional message.
+- `handlers/question.ts` delegates list/reply/reject directly to
+  `Question.Service`; reply payloads are `{ answers }`, reject is keyed only by
+  request id.
+- `handlers/provider.ts` builds provider list from the Models.dev catalog plus
+  locally connected providers, filtered by OpenCode config. This is the native
+  source for provider/model discovery when Agent Code wants OpenCode-specific
+  availability instead of a generic provider list.
+
 ## Known follow-up reads
 
 - `packages/opencode/src/cli/cmd/run/session-data.ts`
