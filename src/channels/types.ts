@@ -18,13 +18,21 @@
 
 export type SemanticSource = 'opencode-sse' | 'opencode-history'
 export type SemanticConfidence = 'high' | 'medium' | 'fallback'
+// WHY this union must stay a strict subset of the app renderer's StreamPhase
+// union (idle | submitting | requesting | thinking | responding | tool-input |
+// tool-use | awaiting-tool): stream_phase events cross the package boundary
+// verbatim — there is no translation layer on the app side. The original
+// 'tool-running' member was invented here, never existed in the renderer, and
+// any event carrying it landed as an unrenderable phase (verified against a
+// live debug bundle where streamPhase never advanced). If OpenCode ever needs
+// a phase the renderer lacks, add it to the renderer first, then here.
 export type StreamPhase =
   | 'idle'
   | 'thinking'
   | 'responding'
   | 'tool-input'
   | 'awaiting-tool'
-  | 'tool-running'
+  | 'tool-use'
 
 export type SemanticTurnStartedEvent = {
   type: 'turn_started'
