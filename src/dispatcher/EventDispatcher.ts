@@ -1,6 +1,7 @@
 import { CommittedChannel } from '../channels/CommittedChannel.js'
 import { ScreenChannel } from '../channels/ScreenChannel.js'
 import { SemanticChannel } from '../channels/SemanticChannel.js'
+import type { SemanticBlockKind } from '../channels/types.js'
 import { PartAccumulator } from './partAccumulator.js'
 import { TurnTracker } from './turnTracker.js'
 
@@ -24,6 +25,61 @@ export class EventDispatcher {
   private readonly accumulator: PartAccumulator
   private readonly turns: TurnTracker
   private readonly messageRoles = new Map<string, 'user' | 'assistant'>()
+
+  // WHY the dispatcher tracks part kind separately from the wire `field`:
+  // OpenCode's processor publishes reasoning deltas as `message.part.delta`
+  // with `field: "text"` — byte-identical to answer-text deltas (see
+  // opencode session/processor.ts `reasoning-delta` vs `text-delta`, both
+  // `field: "text"`). The ONLY way to tell them apart is the part `type`
+  // carried by the `message.part.updated` snapshot that always precedes the
+  // deltas (reasoning-start/text-start both call updatePart first). A live
+  // debug bundle proved what happens without this map: reasoning text was
+  // concatenated straight into the answer ("…extra skills!I can help…") and
+  // the transcript rendered thinking as answer prose.
+  private readonly partKinds = new Map<string, SemanticBlockKind>()
+
+  // Blocks that got a block_started but no block_completed yet, keyed by
+  // blockId (partID / callID). Needed so (a) block_started is emitted exactly
+  // once per block even though OpenCode re-publishes part snapshots on every
+  // state change, and (b) turn completion can close any block the stream
+  // never explicitly ended (TurnTracker calls back into
+  // closeOpenBlocksForTurn before publishing turn_completed).
+  private readonly openBlocks = new Map<
+    string,
+    { turnId: string; kind: SemanticBlockKind; name?: string }
+  >()
+
+  // WHY we assemble committed messages ourselves: the wire `message.updated`
+  // payload is `{sessionID, info}` — NO parts (opencode message-v2.ts
+  // UpdatedEventSchema). The app's committed-message mapper requires
+  // `{info, parts}` and maps a parts-less payload to zero entries, so
+  // republishing the raw payload (the old behavior) meant live turns NEVER
+  // produced a durable transcript line — the bundle showed committed messages
+  // arriving parts-less and nothing rendering after a reload. We therefore
+  // buffer the latest part snapshots per messageID (message.part.updated
+  // carries the full part each time, including final text at text-end /
+  // reasoning-end) and publish ONE assembled `{info, parts}` when the message
+  // is durable. The resume path (HistoryClient) already gets `{info, parts}`
+  // rows from the server and bypasses this entirely.
+  private readonly messageInfos = new Map<string, unknown>()
+  private readonly messageParts = new Map<string, Map<string, unknown>>()
+
+  // Assistant messageIDs already committed. Guards against double-publishing
+  // when late `message.updated` events touch an already-completed message
+  // (usage backfill, revert flows) — and against ensureTurn() resurrecting a
+  // finished turn for such stragglers. Bounded FIFO because a long-lived
+  // session can produce thousands of messages.
+  private readonly committedAssistant = new Set<string>()
+
+  // Cap on how many in-flight messages we buffer parts for. 32 is generous:
+  // at any moment only the live assistant message (plus the user message that
+  // triggered it) is actually streaming; everything older has either been
+  // committed+evicted or is stale. Without a cap an SSE stream that never
+  // delivers `time.completed` (crash mid-turn) would leak part snapshots
+  // forever.
+  private static readonly MAX_TRACKED_MESSAGES = 32
+  private static readonly MAX_COMMITTED_IDS = 256
+
   private sessionID: string | null
 
   constructor(opts: EventDispatcherOptions) {
@@ -31,7 +87,10 @@ export class EventDispatcher {
     this.screen = opts.screen
     this.committed = opts.committed
     this.accumulator = opts.accumulator ?? new PartAccumulator()
-    this.turns = new TurnTracker({ semantic: opts.semantic })
+    this.turns = new TurnTracker({
+      semantic: opts.semantic,
+      onBeforeComplete: turnId => this.closeOpenBlocksForTurn(turnId),
+    })
     this.sessionID = opts.sessionID ?? null
   }
 
@@ -374,13 +433,62 @@ export class EventDispatcher {
 
   private handleMessageUpdated(payload: unknown): void {
     const sessionID = this.eventSessionID(payload)
-    if (sessionID) this.committed.publishMessage(sessionID, payload)
+    const info = getUnknown(payload, ['info', 'message']) ?? payload
     const messageID = getString(payload, ['info.id', 'message.id', 'id'])
     const role = getString(payload, ['info.role', 'message.role', 'role'])
     if (messageID && (role === 'user' || role === 'assistant')) {
       this.messageRoles.set(messageID, role)
+      this.messageInfos.set(messageID, info)
     }
-    const usage = getUnknown(payload, ['usage', 'message.usage'])
+
+    // Committed publication policy (see the messageInfos/messageParts field
+    // comment for the wire-shape evidence):
+    //
+    //  - user messages: publish assembled immediately. The info arrives before
+    //    its parts on the bus (session.ts publishes updateMessage before
+    //    updatePart for the user prompt), so this first publish may carry an
+    //    empty parts array; handlePartUpdated republishes the assembled
+    //    message as each user part lands, converging on the full message.
+    //    User messages are tiny (1-2 parts) so the extra publish is cheap and
+    //    committed consumers key on info.id.
+    //
+    //  - assistant messages: suppress every mid-stream republish and publish
+    //    exactly ONE assembled {info, parts} when info.time.completed appears
+    //    (that is OpenCode's durable-completion marker — message-v2.ts
+    //    Assistant.time.completed). Mid-stream rendering is the semantic
+    //    channel's job; the committed channel must only ever see durable,
+    //    fully-assembled messages.
+    if (messageID && role === 'assistant') {
+      const completed = getUnknown(info, ['time.completed']) !== undefined
+      if (!completed) {
+        // The assistant message.updated is the earliest reliable turn
+        // boundary on the wire (it precedes every part event), and its id is
+        // the turnId every block event must share — the bundle showed tool
+        // blocks keyed on sessionID targeting a phantom turn the app's fold
+        // layer dropped. Guard on committedAssistant so a late touch to an
+        // old message cannot resurrect a finished turn.
+        if (!this.committedAssistant.has(messageID)) {
+          this.turns.ensureTurn(messageID, 'assistant')
+        }
+      } else if (!this.committedAssistant.has(messageID)) {
+        this.rememberCommitted(messageID)
+        this.committed.publishMessage(sessionID, this.assembleMessage(messageID))
+        this.closeOpenBlocksForTurn(messageID)
+        if (this.turns.getActiveTurnId() === messageID) this.turns.completeTurn()
+        this.evictMessage(messageID)
+      }
+    } else if (messageID && role === 'user') {
+      this.committed.publishMessage(sessionID, this.assembleMessage(messageID))
+    } else if (sessionID) {
+      // Unknown shape (no id/role we recognize): keep the old passthrough so
+      // nothing is silently dropped — downstream treats it as an opaque entry.
+      this.committed.publishMessage(sessionID, payload)
+    }
+
+    // 'info.tokens' added alongside the legacy paths: the real v1 wire shape
+    // is {sessionID, info} and the assistant Info carries `tokens`, so the
+    // original ['usage', 'message.usage'] lookups never matched live events.
+    const usage = getUnknown(payload, ['usage', 'message.usage', 'info.tokens', 'tokens'])
     if (usage) {
       this.semantic.publish({
         type: 'usage_updated',
@@ -395,12 +503,41 @@ export class EventDispatcher {
   private handlePartUpdated(payload: unknown): void {
     const part = getUnknown(payload, ['part']) ?? payload
     const partID = getString(part, ['id', 'partID']) ?? stableID('part')
-    const turnId = getString(part, ['messageID', 'messageId', 'message.id']) ?? this.turns.getActiveTurnId() ?? partID
+    const messageID = getString(part, ['messageID', 'messageId', 'message.id'])
+    // Every semantic event for this part MUST share the messageID-derived
+    // turnId. The bundle's phantom-turn failure came from mixing keys:
+    // text/turn events keyed on messageID while tool/shell block events keyed
+    // on sessionID, so the app's fold layer attached blocks to a turn that
+    // never existed and dropped them.
+    const turnId = messageID ?? this.turns.getActiveTurnId() ?? partID
     const role =
       getString(part, ['role', 'message.role']) ??
-      (turnId ? this.messageRoles.get(turnId) : undefined)
-    if (role === 'user') return
+      (messageID ? this.messageRoles.get(messageID) : undefined)
+
+    // Buffer the snapshot for committed assembly BEFORE any role gating:
+    // user-message parts never reach the semantic channel but absolutely
+    // belong in the durable transcript. OpenCode republishes the full part on
+    // every state change (including the final text at text-end), so a plain
+    // replace-by-partID map converges on the durable content. Insertion order
+    // matches PartID.ascending() creation order because the first snapshot
+    // for each part always precedes any other part's first snapshot.
+    if (messageID) this.rememberPart(messageID, partID, part)
+
     const kind = normalizePartKind(getString(part, ['type', 'kind']))
+    // Registered even for parts we don't stream semantically: message.part.delta
+    // routing depends on this map (reasoning deltas arrive as field:"text").
+    if (kind !== 'unknown') this.partKinds.set(partID, kind)
+
+    if (role === 'user') {
+      // Republish the assembled user message now that a part landed — the
+      // initial message.updated publish happened before any parts existed on
+      // the bus (see handleMessageUpdated).
+      if (messageID) {
+        this.committed.publishMessage(this.eventSessionID(payload), this.assembleMessage(messageID))
+      }
+      return
+    }
+
     const text = getString(part, ['text', 'content', 'summary'])
     const name = getString(part, ['tool', 'name', 'toolName'])
     this.accumulator.applyUpdate(partID, {
@@ -409,39 +546,76 @@ export class EventDispatcher {
       input: stringifyMaybe(getUnknown(part, ['input', 'args'])),
     })
 
+    // text/reasoning parts carry time.end exactly once, on the final snapshot
+    // (text-end / reasoning-end in opencode's processor) — that is our
+    // block_completed signal for streaming-text blocks.
+    const ended = getUnknown(part, ['time.end']) !== undefined
+
     if (kind === 'text' && typeof text === 'string') {
+      // Snapshots carry the FULL text so far; deltas may also stream via
+      // message.part.delta for the same part. __last_text_emitted is the
+      // shared high-water mark between both paths so overlapping events never
+      // double-append.
       const previous = this.accumulator.getField(partID, '__last_text_emitted')
       const delta = text.startsWith(previous) ? text.slice(previous.length) : text
       this.accumulator.applyUpdate(partID, { __last_text_emitted: text })
-      if (delta) this.turns.appendText(turnId, delta, this.turns.getFullText() + delta)
-      this.semantic.publish({
-        type: 'text_delta',
-        turnId,
-        blockId: partID,
-        textDelta: delta,
-        fullText: text,
-        source: 'opencode-sse',
-        ts: Date.now(),
-      })
+      this.turns.ensureTurn(turnId, 'assistant')
+      this.ensureBlockOpen(turnId, partID, 'text')
+      if (delta) {
+        // First answer-text of a turn is the 'responding' boundary; the
+        // tracker dedupes so per-snapshot calls collapse to one event. The
+        // bundle showed text-only turns emitting ZERO stream_phase events
+        // because only thinking/tool paths ever called setPhase.
+        this.turns.setPhase('responding')
+        this.turns.appendText(turnId, delta)
+        this.semantic.publish({
+          type: 'text_delta',
+          turnId,
+          blockId: partID,
+          textDelta: delta,
+          fullText: text,
+          source: 'opencode-sse',
+          ts: Date.now(),
+        })
+      }
+      if (ended) this.closeBlock(partID)
     }
 
     if (kind === 'reasoning' && typeof text === 'string') {
-      this.semantic.publish({
-        type: 'thinking_delta',
-        turnId,
-        blockId: partID,
-        textDelta: text,
-        fullText: text,
-        source: 'opencode-sse',
-        ts: Date.now(),
-      })
+      // Reasoning gets the same delta-dedupe as text (the old code re-emitted
+      // the full accumulated reasoning as a "delta" on every snapshot) but is
+      // NEVER appended to the turn's fullText — turn_delta semantics are
+      // "assistant answer text only". Mixing them is exactly the corruption
+      // the bundle captured.
+      const previous = this.accumulator.getField(partID, '__last_thinking_emitted')
+      const delta = text.startsWith(previous) ? text.slice(previous.length) : text
+      this.accumulator.applyUpdate(partID, { __last_thinking_emitted: text })
+      this.turns.ensureTurn(turnId, 'assistant')
+      this.ensureBlockOpen(turnId, partID, 'reasoning')
+      if (delta) {
+        this.turns.setPhase('thinking')
+        this.semantic.publish({
+          type: 'thinking_delta',
+          turnId,
+          blockId: partID,
+          textDelta: delta,
+          fullText: text,
+          source: 'opencode-sse',
+          ts: Date.now(),
+        })
+      }
+      if (ended) this.closeBlock(partID)
     }
 
     if (kind === 'tool') {
       const status = getString(part, ['status', 'state.status'])
       this.turns.ensureTurn(turnId, 'assistant')
       const input = getUnknown(part, ['input', 'args', 'state.input'])
-      if (input !== undefined) {
+      // Gate on status: the 'pending' snapshot ships a placeholder
+      // `state.input: {}` (tool-input-start in opencode's processor), and
+      // publishing that as "finalized" would clobber any streamed input the
+      // consumer already assembled.
+      if (input !== undefined && status !== 'pending') {
         this.semantic.publish({
           type: 'tool_input_finalized',
           turnId,
@@ -452,15 +626,12 @@ export class EventDispatcher {
           ts: Date.now(),
         })
       }
-      this.semantic.publish({
-        type: status === 'completed' || status === 'error' ? 'block_completed' : 'block_started',
-        turnId,
-        blockId: partID,
-        kind: 'tool',
-        name,
-        source: 'opencode-sse',
-        ts: Date.now(),
-      })
+      // ensureBlockOpen before any completion so a tool that jumps straight
+      // to completed (fast tools, replayed streams) still yields a
+      // started -> completed pair; it also dedupes the old behavior of
+      // re-emitting block_started on every pending/running snapshot.
+      this.ensureBlockOpen(turnId, partID, 'tool', name)
+      if (status === 'running') this.turns.setPhase('tool-use')
       const output = getTextValue(part, ['output', 'result', 'state.output', 'metadata.output'])
       if (output || status === 'error') {
         this.semantic.publish({
@@ -474,41 +645,39 @@ export class EventDispatcher {
           ts: Date.now(),
         })
       }
+      if (status === 'completed' || status === 'error') this.closeBlock(partID)
     }
   }
 
   private handlePartDelta(payload: unknown): void {
     const partID = getString(payload, ['partID', 'id', 'part.id']) ?? stableID('part')
-    const turnId =
-      getString(payload, ['messageID', 'messageId', 'message.id', 'part.messageID']) ??
-      this.turns.getActiveTurnId() ??
-      partID
+    const messageID = getString(payload, ['messageID', 'messageId', 'message.id', 'part.messageID'])
+    const turnId = messageID ?? this.turns.getActiveTurnId() ?? partID
     const role =
       getString(payload, ['role', 'message.role', 'part.role']) ??
-      (turnId ? this.messageRoles.get(turnId) : undefined)
+      (messageID ? this.messageRoles.get(messageID) : undefined)
     if (role === 'user') return
     const field = getString(payload, ['field']) ?? 'text'
     const delta = getString(payload, ['delta', 'text', 'content']) ?? ''
     if (!delta) return
 
+    // WHY routing keys on the registered part kind, NOT the wire `field`:
+    // OpenCode publishes reasoning deltas with `field: "text"` (processor.ts
+    // `reasoning-delta`), indistinguishable from answer-text deltas at the
+    // field level. Routing by field was the bundle's smoking gun — 199 flat
+    // turn_delta events with reasoning concatenated into the answer. The
+    // part's `message.part.updated` snapshot (which always precedes deltas)
+    // told us the real kind via partKinds; the field is only a fallback for
+    // parts whose snapshot we never saw (SSE reconnect mid-part).
+    const kind = this.partKinds.get(partID) ?? kindFromDeltaField(field)
     const full = this.accumulator.applyDelta(partID, field, delta)
-    if (field === 'text' || field === 'content') {
-      this.accumulator.applyUpdate(partID, { __last_text_emitted: full })
-      this.turns.appendText(turnId, delta)
-      this.semantic.publish({
-        type: 'text_delta',
-        turnId,
-        blockId: partID,
-        textDelta: delta,
-        fullText: full,
-        source: 'opencode-sse',
-        ts: Date.now(),
-      })
-      return
-    }
 
-    if (field === 'thinking' || field === 'reasoning') {
+    if (kind === 'reasoning') {
+      // Keep the snapshot path's high-water mark in sync so the final
+      // part.updated (full reasoning text) does not re-emit everything.
+      this.accumulator.applyUpdate(partID, { __last_thinking_emitted: full })
       this.turns.ensureTurn(turnId, 'assistant')
+      this.ensureBlockOpen(turnId, partID, 'reasoning')
       this.turns.setPhase('thinking')
       this.semantic.publish({
         type: 'thinking_delta',
@@ -522,7 +691,26 @@ export class EventDispatcher {
       return
     }
 
+    if (kind === 'text') {
+      this.accumulator.applyUpdate(partID, { __last_text_emitted: full })
+      this.turns.ensureTurn(turnId, 'assistant')
+      this.ensureBlockOpen(turnId, partID, 'text')
+      this.turns.setPhase('responding')
+      this.turns.appendText(turnId, delta)
+      this.semantic.publish({
+        type: 'text_delta',
+        turnId,
+        blockId: partID,
+        textDelta: delta,
+        fullText: full,
+        source: 'opencode-sse',
+        ts: Date.now(),
+      })
+      return
+    }
+
     this.turns.ensureTurn(turnId, 'assistant')
+    this.ensureBlockOpen(turnId, partID, 'tool')
     this.turns.setPhase('tool-input')
     this.semantic.publish({
       type: 'tool_input_delta',
@@ -537,11 +725,22 @@ export class EventDispatcher {
 
   private handleNextShell(type: string, payload: unknown): void {
     const sessionID = this.eventSessionID(payload)
+    // WHY not sessionID as turnId: session.next.* events genuinely carry no
+    // messageID (v2/session-event.ts — Base is {timestamp, sessionID} plus
+    // callID/command), but the rest of the turn's events key on the assistant
+    // messageID. Keying these on sessionID made every shell block target a
+    // phantom turn that the app's fold layer dropped (bundle evidence: zero
+    // renderable block events). The tracker's active turn IS the assistant
+    // messageID whenever a turn is live, so derive from it.
+    const turnId = this.nextTurnId(payload)
     const blockId = getString(payload, ['callID']) ?? stableID('shell')
     if (type.endsWith('.ended')) {
+      // Open-before-close: if we never saw .started (attach mid-run), emit
+      // the started half so downstream folding sees a complete pair.
+      this.ensureBlockOpen(turnId, blockId, 'tool', 'shell')
       this.semantic.publish({
         type: 'tool_result',
-        turnId: sessionID,
+        turnId,
         toolUseId: blockId,
         name: 'shell',
         content: getString(payload, ['output']) ?? '',
@@ -549,25 +748,9 @@ export class EventDispatcher {
         source: 'opencode-sse',
         ts: Date.now(),
       })
-      this.semantic.publish({
-        type: 'block_completed',
-        turnId: sessionID,
-        blockId,
-        kind: 'tool',
-        name: 'shell',
-        source: 'opencode-sse',
-        ts: Date.now(),
-      })
+      this.closeBlock(blockId)
     } else {
-      this.semantic.publish({
-        type: 'block_started',
-        turnId: sessionID,
-        blockId,
-        kind: 'tool',
-        name: 'shell',
-        source: 'opencode-sse',
-        ts: Date.now(),
-      })
+      this.ensureBlockOpen(turnId, blockId, 'tool', 'shell')
     }
     this.screen.publishSystem({
       category: 'command',
@@ -583,7 +766,7 @@ export class EventDispatcher {
     if (usage) {
       this.semantic.publish({
         type: 'usage_updated',
-        turnId: this.eventSessionID(payload),
+        turnId: this.turns.getActiveTurnId(),
         usage,
         source: 'opencode-sse',
         ts: Date.now(),
@@ -599,22 +782,21 @@ export class EventDispatcher {
   }
 
   private handleNextText(type: string, payload: unknown): void {
-    const turnId = this.eventSessionID(payload)
-    const blockId = `${turnId}:next-text`
+    // turnId derives from the active turn (see handleNextShell comment for
+    // the phantom-turn evidence); the blockId stays keyed on sessionID so the
+    // accumulator/fold key is stable across the whole stream even if the
+    // active turn flips between .started and .delta.
+    const turnId = this.nextTurnId(payload)
+    const blockId = `${this.eventSessionID(payload)}:next-text`
     if (type.endsWith('.started')) {
-      this.semantic.publish({
-        type: 'block_started',
-        turnId,
-        blockId,
-        kind: 'text',
-        source: 'opencode-sse',
-        ts: Date.now(),
-      })
+      this.ensureBlockOpen(turnId, blockId, 'text')
       return
     }
     const delta = getString(payload, ['delta', 'text']) ?? ''
     const full = type.endsWith('.ended') ? delta : this.accumulator.applyDelta(blockId, 'text', delta)
     if (delta) {
+      this.ensureBlockOpen(turnId, blockId, 'text')
+      this.turns.setPhase('responding')
       this.semantic.publish({
         type: 'text_delta',
         turnId,
@@ -625,35 +807,22 @@ export class EventDispatcher {
         ts: Date.now(),
       })
     }
-    if (type.endsWith('.ended')) {
-      this.semantic.publish({
-        type: 'block_completed',
-        turnId,
-        blockId,
-        kind: 'text',
-        source: 'opencode-sse',
-        ts: Date.now(),
-      })
-    }
+    if (type.endsWith('.ended')) this.closeBlock(blockId)
   }
 
   private handleNextReasoning(type: string, payload: unknown): void {
-    const turnId = this.eventSessionID(payload)
-    const blockId = getString(payload, ['reasoningID']) ?? `${turnId}:next-reasoning`
+    const turnId = this.nextTurnId(payload)
+    const blockId =
+      getString(payload, ['reasoningID']) ?? `${this.eventSessionID(payload)}:next-reasoning`
     if (type.endsWith('.started')) {
-      this.semantic.publish({
-        type: 'block_started',
-        turnId,
-        blockId,
-        kind: 'reasoning',
-        source: 'opencode-sse',
-        ts: Date.now(),
-      })
+      this.ensureBlockOpen(turnId, blockId, 'reasoning')
       return
     }
     const delta = getString(payload, ['delta', 'text']) ?? ''
     const full = type.endsWith('.ended') ? delta : this.accumulator.applyDelta(blockId, 'text', delta)
     if (delta) {
+      this.ensureBlockOpen(turnId, blockId, 'reasoning')
+      this.turns.setPhase('thinking')
       this.semantic.publish({
         type: 'thinking_delta',
         turnId,
@@ -664,26 +833,23 @@ export class EventDispatcher {
         ts: Date.now(),
       })
     }
+    if (type.endsWith('.ended')) this.closeBlock(blockId)
   }
 
   private handleNextTool(type: string, payload: unknown): void {
-    const turnId = this.eventSessionID(payload)
+    const turnId = this.nextTurnId(payload)
     const blockId = getString(payload, ['callID']) ?? stableID('tool')
     const name = getString(payload, ['name', 'tool'])
     if (type.endsWith('.input.started') || type.endsWith('.called')) {
-      this.semantic.publish({
-        type: 'block_started',
-        turnId,
-        blockId,
-        kind: 'tool',
-        name,
-        source: 'opencode-sse',
-        ts: Date.now(),
-      })
+      // ensureBlockOpen dedupes the old double block_started that fired for
+      // both .input.started and .called on the same callID.
+      this.ensureBlockOpen(turnId, blockId, 'tool', name)
     }
     if (type.endsWith('.input.delta')) {
       const delta = getString(payload, ['delta']) ?? ''
       const full = this.accumulator.applyDelta(blockId, 'input', delta)
+      this.ensureBlockOpen(turnId, blockId, 'tool', name)
+      this.turns.setPhase('tool-input')
       this.semantic.publish({
         type: 'tool_input_delta',
         turnId,
@@ -710,6 +876,7 @@ export class EventDispatcher {
     }
     if (type.endsWith('.success') || type.endsWith('.failed') || type.endsWith('.progress')) {
       const content = getTextValue(payload, ['content', 'structured', 'error.message']) ?? ''
+      this.ensureBlockOpen(turnId, blockId, 'tool', name)
       this.semantic.publish({
         type: 'tool_result',
         turnId,
@@ -721,17 +888,7 @@ export class EventDispatcher {
         ts: Date.now(),
       })
     }
-    if (type.endsWith('.success') || type.endsWith('.failed')) {
-      this.semantic.publish({
-        type: 'block_completed',
-        turnId,
-        blockId,
-        kind: 'tool',
-        name,
-        source: 'opencode-sse',
-        ts: Date.now(),
-      })
-    }
+    if (type.endsWith('.success') || type.endsWith('.failed')) this.closeBlock(blockId)
   }
 
   private handleNextCompaction(type: string, payload: unknown): void {
@@ -771,6 +928,111 @@ export class EventDispatcher {
       'unknown-session'
     )
   }
+
+  // turnId for session.next.* events, which carry no messageID on the wire.
+  // Prefer the tracker's active turn (the assistant messageID established by
+  // message.updated / message.part.* events) so every block of a turn shares
+  // one key; fall back to sessionID only when nothing has opened a turn yet —
+  // in that case there is no better identity available and downstream will at
+  // least group the events consistently with each other.
+  private nextTurnId(payload: unknown): string {
+    return this.turns.getActiveTurnId() ?? this.eventSessionID(payload)
+  }
+
+  private ensureBlockOpen(
+    turnId: string,
+    blockId: string,
+    kind: SemanticBlockKind,
+    name?: string,
+  ): void {
+    if (this.openBlocks.has(blockId)) return
+    this.openBlocks.set(blockId, { turnId, kind, name })
+    this.semantic.publish({
+      type: 'block_started',
+      turnId,
+      blockId,
+      kind,
+      name,
+      source: 'opencode-sse',
+      ts: Date.now(),
+    })
+  }
+
+  private closeBlock(blockId: string): void {
+    const block = this.openBlocks.get(blockId)
+    if (!block) return
+    this.openBlocks.delete(blockId)
+    this.semantic.publish({
+      type: 'block_completed',
+      turnId: block.turnId,
+      blockId,
+      kind: block.kind,
+      name: block.name,
+      source: 'opencode-sse',
+      ts: Date.now(),
+    })
+  }
+
+  // Invoked by TurnTracker (onBeforeComplete) and by the assistant-completed
+  // path so that no turn ever finishes with dangling open blocks — a
+  // block_started without a matching block_completed leaves the app's fold
+  // layer holding a permanently "streaming" block.
+  private closeOpenBlocksForTurn(turnId: string): void {
+    for (const [blockId, block] of [...this.openBlocks]) {
+      if (block.turnId === turnId) this.closeBlock(blockId)
+    }
+  }
+
+  private rememberPart(messageID: string, partID: string, part: unknown): void {
+    let parts = this.messageParts.get(messageID)
+    if (!parts) {
+      parts = new Map()
+      this.messageParts.set(messageID, parts)
+      // FIFO eviction: Map iteration order is insertion order, so the first
+      // key is always the oldest tracked message. See MAX_TRACKED_MESSAGES
+      // for why a cap exists at all.
+      while (this.messageParts.size > EventDispatcher.MAX_TRACKED_MESSAGES) {
+        const oldest = this.messageParts.keys().next().value
+        if (oldest === undefined) break
+        this.evictMessage(oldest)
+      }
+    }
+    parts.set(partID, part)
+  }
+
+  private rememberCommitted(messageID: string): void {
+    this.committedAssistant.add(messageID)
+    while (this.committedAssistant.size > EventDispatcher.MAX_COMMITTED_IDS) {
+      const oldest = this.committedAssistant.values().next().value
+      if (oldest === undefined) break
+      this.committedAssistant.delete(oldest)
+    }
+  }
+
+  private evictMessage(messageID: string): void {
+    const parts = this.messageParts.get(messageID)
+    if (parts) {
+      for (const partID of parts.keys()) {
+        this.partKinds.delete(partID)
+        this.openBlocks.delete(partID)
+        this.accumulator.evict(partID)
+      }
+    }
+    this.messageParts.delete(messageID)
+    this.messageInfos.delete(messageID)
+  }
+
+  // The `{info, parts}` shape mirrors what the server's message-list endpoint
+  // returns (message-v2.ts WithParts) and what HistoryClient replays on
+  // resume, so committed consumers see one shape regardless of whether a
+  // message arrived live or from history. The info fallback covers the
+  // pathological ordering where a part somehow precedes its message.updated —
+  // downstream then still gets an entry keyed by id instead of nothing.
+  private assembleMessage(messageID: string): { info: unknown; parts: unknown[] } {
+    const info = this.messageInfos.get(messageID) ?? { id: messageID }
+    const parts = this.messageParts.get(messageID)
+    return { info, parts: parts ? [...parts.values()] : [] }
+  }
 }
 
 function payloadOf(event: OpenCodeBusEvent): unknown {
@@ -783,6 +1045,18 @@ function normalizePartKind(kind: string | undefined): 'text' | 'reasoning' | 'to
   if (kind === 'reasoning' || kind === 'thinking') return 'reasoning'
   if (kind === 'tool' || kind === 'tool-call' || kind === 'tool_use') return 'tool'
   return 'unknown'
+}
+
+// Fallback routing for message.part.delta when the part's snapshot (and thus
+// its registered kind) was never seen — e.g. an SSE reconnect landing mid-part.
+// Mirrors the pre-fix field heuristic: text-ish fields stream as answer text,
+// explicit thinking fields as reasoning, anything else as tool input. Note
+// this CANNOT distinguish a reasoning delta (field:"text" on the wire) from an
+// answer delta — only partKinds can — which is exactly why it is a fallback.
+function kindFromDeltaField(field: string): 'text' | 'reasoning' | 'tool' {
+  if (field === 'text' || field === 'content') return 'text'
+  if (field === 'thinking' || field === 'reasoning') return 'reasoning'
+  return 'tool'
 }
 
 function getUnknown(value: unknown, paths: string[]): unknown {
