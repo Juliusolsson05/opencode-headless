@@ -102,6 +102,45 @@ export class EventDispatcher {
     const type = event.type
     const payload = payloadOf(event)
 
+    // SESSION OWNERSHIP FILTER (2026-07-06 "agent output breaks stuff" fix).
+    //
+    // OpenCode's /event SSE is SERVER-WIDE: every session on the server —
+    // including child sessions spawned by the agent/task tool — shares one
+    // bus. This dispatcher represents exactly ONE session. Before this guard,
+    // foreign-session events flowed straight through the switch below, with
+    // two observed disasters (2026-07-06T16-54 debug bundle):
+    //   1. A child session's messages interleaved with ours on the semantic
+    //      channel — turn ids alternating A,B,A,B… 30 turn_starteds across 4
+    //      messageIDs — thrashing the app's single live-turn slot into a
+    //      27↔29 visible-row render spasm.
+    //   2. Child-session committed messages hit the app's provider-session
+    //      conflict detector (`jsonl_provider_conflict`, expected ses_X
+    //      observed ses_Y), which drops the burst — so agent-tool output was
+    //      lost from the durable feed entirely.
+    //
+    // Policy: if the event names a session and it is not OURS, drop it here.
+    // Session-less events (server.*, heartbeats) pass. If we do not yet know
+    // our own id (resume race before captureSessionID), we let events through
+    // rather than drop legitimate early traffic — captureSessionID below only
+    // ever ADOPTS an id when none is known, so the window is one event long
+    // in practice (createSession sets the id before the SSE starts).
+    //
+    // Child-session output is intentionally DROPPED for now, not rendered:
+    // surfacing subagent activity as nested rows needs its own design
+    // (orchestration-style parent/child linkage), and silently merging it
+    // into the parent transcript is the bug we are fixing, not a feature.
+    if (this.sessionID !== null) {
+      const eventSession = getString(payload, [
+        'sessionID',
+        'sessionId',
+        'session.id',
+        'info.sessionID',
+        'part.sessionID',
+        'message.sessionID',
+      ])
+      if (eventSession && eventSession !== this.sessionID) return
+    }
+
     // WHY this switch is deliberately stringly-typed:
     // OpenCode's SDK-generated union is the ideal compile-time source, but the
     // first package version intentionally avoids a dependency that would modify
@@ -413,6 +452,15 @@ export class EventDispatcher {
   }
 
   private captureSessionID(payload: unknown): void {
+    // ADOPT-ONLY, never overwrite. This fallback exists for resume flows
+    // where the SSE starts before the host called setSessionID. Before the
+    // guard, ANY session.created/session.updated on the server-wide bus —
+    // most commonly a CHILD session spawned by the agent/task tool —
+    // overwrote this dispatcher's identity mid-run, silently re-pointing
+    // every subsequent ownership decision (and the dispatch() filter above)
+    // at the child. That identity theft was the engine behind the
+    // 2026-07-06 interleaved-turn spasm.
+    if (this.sessionID !== null) return
     const id = getString(payload, ['id', 'sessionID', 'session.id'])
     if (id) this.sessionID = id
   }
@@ -607,7 +655,7 @@ export class EventDispatcher {
       if (ended) this.closeBlock(partID)
     }
 
-    if (kind === 'tool') {
+    if (kind === 'tool_use') {
       const status = getString(part, ['status', 'state.status'])
       this.turns.ensureTurn(turnId, 'assistant')
       const input = getUnknown(part, ['input', 'args', 'state.input'])
@@ -630,7 +678,7 @@ export class EventDispatcher {
       // to completed (fast tools, replayed streams) still yields a
       // started -> completed pair; it also dedupes the old behavior of
       // re-emitting block_started on every pending/running snapshot.
-      this.ensureBlockOpen(turnId, partID, 'tool', name)
+      this.ensureBlockOpen(turnId, partID, 'tool_use', name)
       if (status === 'running') this.turns.setPhase('tool-use')
       const output = getTextValue(part, ['output', 'result', 'state.output', 'metadata.output'])
       if (output || status === 'error') {
@@ -710,7 +758,7 @@ export class EventDispatcher {
     }
 
     this.turns.ensureTurn(turnId, 'assistant')
-    this.ensureBlockOpen(turnId, partID, 'tool')
+    this.ensureBlockOpen(turnId, partID, 'tool_use')
     this.turns.setPhase('tool-input')
     this.semantic.publish({
       type: 'tool_input_delta',
@@ -737,7 +785,7 @@ export class EventDispatcher {
     if (type.endsWith('.ended')) {
       // Open-before-close: if we never saw .started (attach mid-run), emit
       // the started half so downstream folding sees a complete pair.
-      this.ensureBlockOpen(turnId, blockId, 'tool', 'shell')
+      this.ensureBlockOpen(turnId, blockId, 'tool_use', 'shell')
       this.semantic.publish({
         type: 'tool_result',
         turnId,
@@ -750,7 +798,7 @@ export class EventDispatcher {
       })
       this.closeBlock(blockId)
     } else {
-      this.ensureBlockOpen(turnId, blockId, 'tool', 'shell')
+      this.ensureBlockOpen(turnId, blockId, 'tool_use', 'shell')
     }
     this.screen.publishSystem({
       category: 'command',
@@ -843,12 +891,12 @@ export class EventDispatcher {
     if (type.endsWith('.input.started') || type.endsWith('.called')) {
       // ensureBlockOpen dedupes the old double block_started that fired for
       // both .input.started and .called on the same callID.
-      this.ensureBlockOpen(turnId, blockId, 'tool', name)
+      this.ensureBlockOpen(turnId, blockId, 'tool_use', name)
     }
     if (type.endsWith('.input.delta')) {
       const delta = getString(payload, ['delta']) ?? ''
       const full = this.accumulator.applyDelta(blockId, 'input', delta)
-      this.ensureBlockOpen(turnId, blockId, 'tool', name)
+      this.ensureBlockOpen(turnId, blockId, 'tool_use', name)
       this.turns.setPhase('tool-input')
       this.semantic.publish({
         type: 'tool_input_delta',
@@ -876,7 +924,7 @@ export class EventDispatcher {
     }
     if (type.endsWith('.success') || type.endsWith('.failed') || type.endsWith('.progress')) {
       const content = getTextValue(payload, ['content', 'structured', 'error.message']) ?? ''
-      this.ensureBlockOpen(turnId, blockId, 'tool', name)
+      this.ensureBlockOpen(turnId, blockId, 'tool_use', name)
       this.semantic.publish({
         type: 'tool_result',
         turnId,
@@ -1039,11 +1087,13 @@ function payloadOf(event: OpenCodeBusEvent): unknown {
   return event.properties ?? event.payload ?? event
 }
 
-function normalizePartKind(kind: string | undefined): 'text' | 'reasoning' | 'tool' | 'unknown' {
+function normalizePartKind(kind: string | undefined): SemanticBlockKind {
   if (!kind) return 'unknown'
   if (kind === 'text' || kind === 'assistant_text') return 'text'
   if (kind === 'reasoning' || kind === 'thinking') return 'reasoning'
-  if (kind === 'tool' || kind === 'tool-call' || kind === 'tool_use') return 'tool'
+  // Normalized to 'tool_use' — the renderer's tool-row vocabulary — not the
+  // wire's 'tool'. See the SemanticBlockKind comment in channels/types.ts.
+  if (kind === 'tool' || kind === 'tool-call' || kind === 'tool_use') return 'tool_use'
   return 'unknown'
 }
 

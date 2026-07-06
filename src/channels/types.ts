@@ -70,7 +70,15 @@ export type SemanticStreamPhaseEvent = {
   ts: number
 }
 
-export type SemanticBlockKind = 'text' | 'reasoning' | 'tool' | 'unknown'
+// 'tool_use', NOT 'tool' (2026-07-06): block kinds are consumed verbatim by
+// the Agent Code renderer, whose tool-row detection is a closed union
+// (tool_use | server_tool_use | mcp_tool_use | function_call |
+// custom_tool_call — see renderUnits.ts / hasPendingSemanticTools in the
+// app). The original 'tool' literal was invisible to ALL of it: tool blocks
+// folded into the turn but never rendered a tool row, never counted as
+// pending, never matched a tool_result — the "file reads don't show"
+// symptom. 'reasoning' stays: the renderer accepts thinking|reasoning.
+export type SemanticBlockKind = 'text' | 'reasoning' | 'tool_use' | 'unknown'
 
 export type SemanticBlockRef = {
   turnId: string
