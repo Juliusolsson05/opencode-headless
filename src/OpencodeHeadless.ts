@@ -108,6 +108,14 @@ export class OpencodeHeadless extends EventEmitter {
     return this.sessionID
   }
 
+  /** OS pid of the spawned server child (spawn mode), or null in attach
+   *  mode / before start / after exit. Forwarded from SpawnedServer so
+   *  the Agent Code wrapper can implement AgentSession.getProcessPid()
+   *  without reaching into transport internals. */
+  get processPid(): number | null {
+    return this.spawned?.pid ?? null
+  }
+
   get client(): SyncClient {
     if (!this.sync) throw new Error('OpencodeHeadless has not been started')
     return this.sync

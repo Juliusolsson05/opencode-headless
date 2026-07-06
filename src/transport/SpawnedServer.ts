@@ -68,6 +68,16 @@ export class SpawnedServer extends EventEmitter {
     return this.url
   }
 
+  /** OS pid of the spawned `opencode serve` child, or null before start
+   *  / after exit. Exposed so the Agent Code session wrapper can answer
+   *  `getProcessPid()` for performance attribution — the same reason
+   *  the PTY-based providers surface their node-pty pid. The server is a
+   *  real child we own in spawn mode, so this is the process whose CPU/
+   *  RSS belongs to the pane. Null in attach mode (we didn't spawn it). */
+  get pid(): number | null {
+    return this.child?.pid ?? null
+  }
+
   async start(): Promise<SpawnedServerInfo> {
     if (this.child && this.url) return { child: this.child, url: this.url }
 
