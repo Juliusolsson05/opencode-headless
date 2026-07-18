@@ -1,7 +1,33 @@
 {
   "name": "opencode-headless",
-  "version": "0.0.0-research",
-  "private": true,
-  "description": "RESEARCH PHASE — do not import. See research/ for in-progress investigation of how to wrap OpenCode the way claude-code-headless wraps Claude Code and codex-headless wraps Codex.",
-  "type": "module"
+  "version": "0.1.0",
+  "description": "Programmatically control OpenCode through its headless HTTP/SSE server surface",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "build": "node scripts/clean-dist.mjs && tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:core": "vitest run --project core",
+    "test:system": "vitest run --project system",
+    "test:live": "vitest run --config vitest.live.config.ts --passWithNoTests",
+    "test:coverage": "vitest run --coverage",
+    "test:package": "npm run build && node scripts/test-package.mjs",
+    "test:contract": "node scripts/check-test-contract.mjs",
+    "check": "npm run test:contract && npm run typecheck && npm test && npm run test:package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@vitest/coverage-v8": "^4.1.10",
+    "typescript": "^5.5.0",
+    "vitest": "^4.1.10"
+  },
+  "license": "MIT"
 }
