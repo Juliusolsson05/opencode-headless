@@ -2,11 +2,6 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
-    // WHY this is root-level: Vitest 4 evaluates the no-files result before
-    // applying nested project options. An empty system tier is valid while its
-    // first process-boundary scenarios are being added, but the public command
-    // contract must remain green and independently runnable.
-    passWithNoTests: true,
     projects: [
       {
         test: {
