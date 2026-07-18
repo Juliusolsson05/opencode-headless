@@ -108,15 +108,24 @@ export class SpawnedServer extends EventEmitter {
       let stdoutBuffer = ''
       let stderrBuffer = ''
       const timer = setTimeout(() => {
-        if (settled) return
-        settled = true
-        reject(new Error(`Timed out waiting for ${this.opts.binary} serve to report its URL`))
+        fail(
+          new Error(`Timed out waiting for ${this.opts.binary} serve to report its URL`),
+          true,
+        )
       }, this.opts.startupTimeoutMs)
 
-      const fail = (err: Error) => {
+      const fail = (err: Error, terminate: boolean) => {
         if (settled) return
         settled = true
         clearTimeout(timer)
+        if (this.child === child) this.child = null
+        this.url = null
+        // WHY a failed start must own termination: callers cannot call stop()
+        // reliably after start() rejects, and the old implementation cleared
+        // neither the reference nor the process. A server that never prints a
+        // listen line would therefore survive the rejected promise and keep its
+        // port/process alive for the rest of the Agent Code session.
+        if (terminate) terminateChild(child)
         reject(err)
       }
 
@@ -144,7 +153,7 @@ export class SpawnedServer extends EventEmitter {
         this.emit('stderr', text)
       })
 
-      child.once('error', fail)
+      child.once('error', err => fail(err, false))
       child.once('exit', (exitCode, signal) => {
         this.emit('exit', { exitCode, signal })
         if (!settled) {
@@ -153,6 +162,7 @@ export class SpawnedServer extends EventEmitter {
               `${this.opts.binary} serve exited before readiness` +
                 (stderrBuffer ? `: ${stderrBuffer.trim()}` : ''),
             ),
+            false,
           )
         }
       })
@@ -175,11 +185,16 @@ export class SpawnedServer extends EventEmitter {
       }
     }
 
-    if (!child || child.killed) return
+    if (!child || child.exitCode !== null || child.signalCode !== null) return
     child.kill('SIGTERM')
     await new Promise<void>(resolve => {
       const timer = setTimeout(() => {
-        if (!child.killed) child.kill('SIGKILL')
+        // ChildProcess.killed only means kill() was called; it does not prove
+        // the process exited. Inspect terminal state so a child that ignores
+        // SIGTERM still receives the promised hard-stop escalation.
+        if (child.exitCode === null && child.signalCode === null) {
+          child.kill('SIGKILL')
+        }
         resolve()
       }, 2_000)
       child.once('exit', () => {
@@ -188,4 +203,21 @@ export class SpawnedServer extends EventEmitter {
       })
     })
   }
+}
+
+function terminateChild(child: OpenCodeServerProcess): void {
+  if (child.exitCode !== null || child.signalCode !== null) return
+  child.kill('SIGTERM')
+
+  // WHY this escalation is detached from the rejected start promise: callers
+  // need the readiness failure immediately, but process ownership continues
+  // after rejection. An unref'ed timer guarantees eventual cleanup without
+  // keeping an otherwise-finished CLI process alive for two extra seconds.
+  const timer = setTimeout(() => {
+    if (child.exitCode === null && child.signalCode === null) {
+      child.kill('SIGKILL')
+    }
+  }, 2_000)
+  timer.unref()
+  child.once('exit', () => clearTimeout(timer))
 }
