@@ -96,9 +96,13 @@ export class PartAccumulator {
 
 function truncateUtf8(value: string, maxBytes: number): string {
   if (Buffer.byteLength(value) <= maxBytes) return value
-  let result = value
-  while (Buffer.byteLength(result) > maxBytes) {
-    result = result.slice(0, Math.max(0, result.length - 1024))
+  const accepted: string[] = []
+  let size = 0
+  for (const character of value) {
+    const characterSize = Buffer.byteLength(character)
+    if (size + characterSize > maxBytes) break
+    accepted.push(character)
+    size += characterSize
   }
-  return result
+  return accepted.join('')
 }
