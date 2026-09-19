@@ -286,10 +286,29 @@ export class EventDispatcher {
         })
         return
 
-      case 'session.error':
+      case 'session.error': {
+        // `errorType` tells a consumer WHAT failed without parsing prose
+        // (Agent Code #1018 review). Two cases matter to it:
+        //
+        // 1. A session.error with NO sessionID. OpenCode publishes those for
+        //    instance-wide problems: a SKILL.md, agent, command or plugin file
+        //    that fails to parse (skill/index.ts, config/agent.ts,
+        //    config/command.ts, plugin/index.ts in OpenCode's source; every
+        //    session-scoped publish passes a sessionID). The session filter
+        //    above lets them through because there is no id to compare. They
+        //    are still worth showing, since a broken skill is the user's to fix.
+        //    But they say nothing about this session's turn, and reading them
+        //    as a turn failure made a healthy orchestration child report
+        //    `failed: Failed to parse skill …`. They are marked 'instance'.
+        // 2. Every other error keeps OpenCode's own error name ('APIError',
+        //    'ProviderAuthError', 'MessageAbortedError', …). A user's Esc is
+        //    'MessageAbortedError', which is an interruption and not a provider
+        //    failure; the consumer needs the name to tell the two apart.
+        const sessionScoped = getString(payload, ['sessionID', 'sessionId', 'session.id']) !== undefined
         this.semantic.publish({
           type: 'api_error',
           turnId: this.turns.getActiveTurnId(),
+          errorType: sessionScoped ? getString(payload, ['error.name']) : 'instance',
           // `error.data.message` first (Agent Code #1018): OpenCode 1.18
           // publishes session.error as { sessionID, error: { name, data: {
           // message, statusCode, ... } } }, the same shape as the assistant
@@ -303,6 +322,7 @@ export class EventDispatcher {
           ts: Date.now(),
         })
         return
+      }
 
       case 'session.diff':
         this.screen.publishSystem({

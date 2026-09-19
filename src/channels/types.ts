@@ -158,6 +158,14 @@ export type SemanticApiErrorEvent = {
   type: 'api_error'
   turnId: string | null
   message: string
+  /**
+   * What failed, as a stable name rather than prose. OpenCode's own error
+   * name for a session error ('APIError', 'MessageAbortedError', …),
+   * 'instance' for an instance-wide error with no session (a broken skill,
+   * agent, command or plugin file), or 'part_overflow' for this package's
+   * delta-buffer cap. Absent when OpenCode sent no name.
+   */
+  errorType?: string
   error?: unknown
   source: SemanticSource
   ts: number
