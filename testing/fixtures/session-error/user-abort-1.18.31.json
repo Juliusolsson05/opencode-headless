@@ -1,0 +1,5 @@
+{
+  "provenance": "Agent Code testing/fixtures/orchestration-api-error/opencode-terminal-nonretryable-and-abort.json, case b (OpenCode 1.18.31 database, 2026-09-18): the assistant row error left by a user pressing Esc mid-turn. session.error publishes {sessionID, error: assistantMessage.error}, so this is the payload's error field verbatim.",
+  "sessionID": "ses_7e76f12489224b43abc3984fe2e5bda2",
+  "error": { "name": "MessageAbortedError", "data": { "message": "Aborted" } }
+}

@@ -145,6 +145,11 @@ export class OpencodeHeadless extends EventEmitter {
         this.semantic.publish({
           type: 'api_error',
           turnId: this.semantic.getActiveTurnId(),
+          // Not a provider failure: the turn keeps streaming, only this part's
+          // live deltas were cut. Marked so a consumer that asks "did the turn
+          // fail?" (Agent Code's orchestration lifecycle) can skip it, while a
+          // feed still shows it.
+          errorType: 'part_overflow',
           message: `OpenCode part ${overflow.partID} exceeded the in-memory delta buffer`,
           error: overflow,
           source: 'opencode-sse',

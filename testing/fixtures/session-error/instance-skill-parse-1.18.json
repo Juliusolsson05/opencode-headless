@@ -1,0 +1,7 @@
+{
+  "provenance": "Derived from OpenCode's source, not recorded: packages/opencode/src/skill/index.ts publishes Session.Event.Error with { error: new NamedError.Unknown({ message }).toObject() } and NO sessionID when a SKILL.md fails to parse (config/agent.ts, config/command.ts and plugin/index.ts do the same for their files). NamedError.toObject() is { name, data }. A live capture was attempted on 2026-09-19 against the 1.18.31 binary (isolated HOME, a project with a malformed .opencode/skill/*/SKILL.md, /global/event subscribed first) but that server did not scan the project's skills, so no event was produced. The message text is the FrontmatterError form from config/markdown.ts.",
+  "error": {
+    "name": "UnknownError",
+    "data": { "message": "/project/.opencode/skill/broken/SKILL.md: Failed to parse YAML frontmatter: unexpected end of the stream within a flow collection" }
+  }
+}
