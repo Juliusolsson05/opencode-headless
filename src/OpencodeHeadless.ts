@@ -7,6 +7,9 @@ import type { CommittedEvent, ScreenEvent, SemanticEvent } from './channels/type
 import { EventDispatcher, type OpenCodeBusEvent } from './dispatcher/EventDispatcher.js'
 import { PartAccumulator } from './dispatcher/partAccumulator.js'
 import { PermissionService, type OpenCodePermissionRequest } from './permissions/PermissionService.js'
+// Shared with the dispatcher so the modal and the pending request can never
+// disagree about a permission's subject again (agent-code#878).
+import { permissionRequestFromEvent } from './permissions/subject.js'
 import { HistoryClient } from './transcript/HistoryClient.js'
 import { SpawnedServer } from './transport/SpawnedServer.js'
 import { SseClient, type SseMessage } from './transport/SseClient.js'
@@ -372,21 +375,6 @@ function extractSessionIDFromEvent(event: OpenCodeBusEvent): string | null {
       ? (event.properties as Record<string, unknown>)
       : event
   return firstString(props, ['sessionID', 'sessionId']) ?? extractID(props.session)
-}
-
-function permissionRequestFromEvent(event: OpenCodeBusEvent): OpenCodePermissionRequest | null {
-  const payload =
-    event.properties && typeof event.properties === 'object'
-      ? (event.properties as Record<string, unknown>)
-      : event
-  const requestID = firstString(payload, ['requestID', 'permissionID', 'id'])
-  if (!requestID) return null
-  return {
-    requestID,
-    sessionID: firstString(payload, ['sessionID', 'sessionId']),
-    title: firstString(payload, ['title', 'tool', 'action']),
-    metadata: payload,
-  }
 }
 
 function firstString(obj: Record<string, unknown>, keys: string[]): string | undefined {
