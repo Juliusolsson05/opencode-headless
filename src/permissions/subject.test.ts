@@ -74,6 +74,29 @@ describe('permission and question subjects on recorded OpenCode 1.18.30 streams'
     expect(shown[0]!.questionID).toMatch(/^que_/)
   })
 
+  it('a compound bash command shows the WHOLE command, not just the patterns OpenCode derived from it', () => {
+    // Review of #14: `patterns` holds only the command nodes OpenCode
+    // collects. It skips cd/pushd and declarations like `export`, so a
+    // subject built from it can hide part of what will actually run.
+    // OpenCode's own permission UI shows `$ ${metadata.command}`.
+    // DERIVED from the recorded event: only metadata.command and patterns
+    // change, to what 1.18.31's ShellTool.collect produces for
+    // `cd packages/app && npm test`. Everything else is the recording.
+    const asked = recording('permission-once').sse.find(({ event }) => event.type === 'permission.asked')!.event
+    const props = asked.properties as Record<string, unknown>
+    const compound = { ...asked, properties: { ...props, patterns: ['npm test'], metadata: { command: 'cd packages/app && npm test' } } }
+    expect(permissionRequestFromEvent(compound)!.title).toBe('bash: cd packages/app && npm test')
+  })
+
+  it('does not present a wildcard-only pattern as the subject (MCP and todowrite asks send ["*"])', () => {
+    const asked = recording('permission-once').sse.find(({ event }) => event.type === 'permission.asked')!.event
+    const props = asked.properties as Record<string, unknown>
+    // DERIVED: the recorded event reshaped the way 1.18.31 asks for an MCP
+    // tool, `{ permission: <tool key>, patterns: ['*'], metadata: {} }`.
+    const mcp = { ...asked, properties: { ...props, permission: 'github_create_issue', patterns: ['*'], metadata: {} } }
+    expect(permissionRequestFromEvent(mcp)!.title).toBe('github_create_issue')
+  })
+
   it('the pending-permission request (the path that answers the prompt) carries the same subject', () => {
     // OpencodeHeadless builds this request for every permission.asked and
     // keeps it for the reply. It used a second, separately drifted parser;
