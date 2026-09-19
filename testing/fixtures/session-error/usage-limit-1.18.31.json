@@ -1,0 +1,13 @@
+{
+  "provenance": "Agent Code testing/fixtures/orchestration-api-error/opencode-structured-usage-limit-terminal.json (OpenCode 1.18.31 database, 2026-09-19): the assistant row error of a zai usage-limit failure. session.error publishes {sessionID, error: assistantMessage.error}, so this is the payload's error field verbatim (response headers dropped).",
+  "sessionID": "ses_f47fca718ffePibDCd10YM7Jc8",
+  "error": {
+    "name": "APIError",
+    "data": {
+      "message": "Usage limit reached for 5 hour. Your limit will reset at 2026-09-19 14:14:24",
+      "statusCode": 429,
+      "isRetryable": true,
+      "responseBody": "{\"error\":{\"code\":\"1308\",\"message\":\"Usage limit reached for 5 hour. Your limit will reset at 2026-09-19 14:14:24\"}}"
+    }
+  }
+}

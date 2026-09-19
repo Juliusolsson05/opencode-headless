@@ -290,7 +290,14 @@ export class EventDispatcher {
         this.semantic.publish({
           type: 'api_error',
           turnId: this.turns.getActiveTurnId(),
-          message: getString(payload, ['message', 'error.message']) ?? 'OpenCode session error',
+          // `error.data.message` first (Agent Code #1018): OpenCode 1.18
+          // publishes session.error as { sessionID, error: { name, data: {
+          // message, statusCode, ... } } }, the same shape as the assistant
+          // row's error in its database. The old lookup found nothing there,
+          // so every failure, a usage limit included, read "OpenCode session
+          // error". The Terminal runtime's LiveStateProjector already reads it
+          // this way.
+          message: getString(payload, ['message', 'error.data.message', 'error.message', 'error.name']) ?? 'OpenCode session error',
           error: payload,
           source: 'opencode-sse',
           ts: Date.now(),
