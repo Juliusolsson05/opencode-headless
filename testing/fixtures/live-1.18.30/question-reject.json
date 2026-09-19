@@ -1,0 +1,2448 @@
+{
+  "meta": {
+    "recordedWith": "1.18.30",
+    "schemaVersion": "sha256:12ad10dcb7bd9b4abf67094c6bbddd01272fd5fa03ce5c5d41519e4959753ff9",
+    "purpose": "Sandboxed native TUI bus and durable ordering recording",
+    "redaction": "Throwaway HOME/XDG and project; synthetic prompts; sandbox paths and ports normalised"
+  },
+  "scenario": "question-reject",
+  "opencodeVersion": "1.18.30",
+  "model": "opencode/big-pickle",
+  "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+  "notes": [
+    "[1.6ms] spawn opencode --session ses_4b206a930b354bc6965a368a5b3f3cb0 --hostname 127.0.0.1 --port 56297",
+    "[8748.1ms] server healthy (200)",
+    "[8820.2ms] sse connected (200)",
+    "[14517.9ms] pasted prompt (105 chars)",
+    "[21668.4ms] question request id=que_08e0ddc5f001oyEb9jhdFwaBzc",
+    "[26024.5ms] tui exited code=0 signal=0"
+  ],
+  "sse": [
+    {
+      "t": 8820.5,
+      "event": {
+        "id": "evt_08e0daa70001fadTBQBXVkzEzl",
+        "type": "server.connected",
+        "properties": {}
+      }
+    },
+    {
+      "t": 10549.8,
+      "event": {
+        "id": "evt_08e0db000001am972bzqHuMVHL",
+        "type": "plugin.added",
+        "properties": {
+          "id": "core/config-reference"
+        }
+      }
+    },
+    {
+      "t": 10549.8,
+      "event": {
+        "id": "evt_08e0db005001rGqQWAWTKZmkg0",
+        "type": "plugin.added",
+        "properties": {
+          "id": "agent"
+        }
+      }
+    },
+    {
+      "t": 10549.8,
+      "event": {
+        "id": "evt_08e0db005002aukG7DOBZ9yi68",
+        "type": "plugin.added",
+        "properties": {
+          "id": "command"
+        }
+      }
+    },
+    {
+      "t": 10549.8,
+      "event": {
+        "id": "evt_08e0db008001ZQGDm2kAXPK6gm",
+        "type": "plugin.added",
+        "properties": {
+          "id": "skill"
+        }
+      }
+    },
+    {
+      "t": 10549.8,
+      "event": {
+        "id": "evt_08e0db00f001S62w6q3mD6wpJM",
+        "type": "plugin.added",
+        "properties": {
+          "id": "models-dev"
+        }
+      }
+    },
+    {
+      "t": 10549.8,
+      "event": {
+        "id": "evt_08e0db00f0023FyYn5UALt9mHE",
+        "type": "plugin.added",
+        "properties": {
+          "id": "config-agent"
+        }
+      }
+    },
+    {
+      "t": 10549.8,
+      "event": {
+        "id": "evt_08e0db010001F5r9j2Qqawdabo",
+        "type": "plugin.added",
+        "properties": {
+          "id": "config-command"
+        }
+      }
+    },
+    {
+      "t": 10549.8,
+      "event": {
+        "id": "evt_08e0db015001wptavGun7tqptB",
+        "type": "plugin.added",
+        "properties": {
+          "id": "config-skill"
+        }
+      }
+    },
+    {
+      "t": 10549.8,
+      "event": {
+        "id": "evt_08e0db017001ymt5MwU5HAV424",
+        "type": "plugin.added",
+        "properties": {
+          "id": "alibaba"
+        }
+      }
+    },
+    {
+      "t": 10549.8,
+      "event": {
+        "id": "evt_08e0db018001SlDrCd9XRhBobF",
+        "type": "plugin.added",
+        "properties": {
+          "id": "amazon-bedrock"
+        }
+      }
+    },
+    {
+      "t": 10549.8,
+      "event": {
+        "id": "evt_08e0db019001dWzYR0wcSs84M9",
+        "type": "plugin.added",
+        "properties": {
+          "id": "anthropic"
+        }
+      }
+    },
+    {
+      "t": 10549.8,
+      "event": {
+        "id": "evt_08e0db01a001pr1UU6U8B8QZrB",
+        "type": "plugin.added",
+        "properties": {
+          "id": "azure-cognitive-services"
+        }
+      }
+    },
+    {
+      "t": 10603.4,
+      "event": {
+        "id": "evt_08e0db127001fUiQqUlK7Bq7n5",
+        "type": "plugin.added",
+        "properties": {
+          "id": "azure"
+        }
+      }
+    },
+    {
+      "t": 10603.4,
+      "event": {
+        "id": "evt_08e0db127002AHjLUuU7aibf06",
+        "type": "plugin.added",
+        "properties": {
+          "id": "cerebras"
+        }
+      }
+    },
+    {
+      "t": 10603.5,
+      "event": {
+        "id": "evt_08e0db128001PSigy4T9ztqggj",
+        "type": "plugin.added",
+        "properties": {
+          "id": "cloudflare-ai-gateway"
+        }
+      }
+    },
+    {
+      "t": 10603.5,
+      "event": {
+        "id": "evt_08e0db12a001Mgn17nMCzjLbpD",
+        "type": "plugin.added",
+        "properties": {
+          "id": "cloudflare-workers-ai"
+        }
+      }
+    },
+    {
+      "t": 10603.5,
+      "event": {
+        "id": "evt_08e0db12a00230jMoupzRGdRf2",
+        "type": "plugin.added",
+        "properties": {
+          "id": "cohere"
+        }
+      }
+    },
+    {
+      "t": 10603.5,
+      "event": {
+        "id": "evt_08e0db12b0016GgKtyc53RPEKD",
+        "type": "plugin.added",
+        "properties": {
+          "id": "deepinfra"
+        }
+      }
+    },
+    {
+      "t": 10603.5,
+      "event": {
+        "id": "evt_08e0db12b002ORo4qNT9EXi6kD",
+        "type": "plugin.added",
+        "properties": {
+          "id": "gateway"
+        }
+      }
+    },
+    {
+      "t": 10603.5,
+      "event": {
+        "id": "evt_08e0db12c001EILqEeRzc06l6s",
+        "type": "plugin.added",
+        "properties": {
+          "id": "github-copilot"
+        }
+      }
+    },
+    {
+      "t": 10603.8,
+      "event": {
+        "id": "evt_08e0db12c002L3igTyYbgTc5Hc",
+        "type": "plugin.added",
+        "properties": {
+          "id": "gitlab"
+        }
+      }
+    },
+    {
+      "t": 10603.8,
+      "event": {
+        "id": "evt_08e0db12d001Ds3pu8RustjMI2",
+        "type": "plugin.added",
+        "properties": {
+          "id": "google"
+        }
+      }
+    },
+    {
+      "t": 10603.8,
+      "event": {
+        "id": "evt_08e0db12d002VQFz100HjMUHF2",
+        "type": "plugin.added",
+        "properties": {
+          "id": "google-vertex-anthropic"
+        }
+      }
+    },
+    {
+      "t": 10603.8,
+      "event": {
+        "id": "evt_08e0db12e001Ja0q1QU6AmkdOM",
+        "type": "plugin.added",
+        "properties": {
+          "id": "google-vertex"
+        }
+      }
+    },
+    {
+      "t": 11185.5,
+      "event": {
+        "id": "evt_08e0db154001GvHOnzEgqIL9H4",
+        "type": "plugin.added",
+        "properties": {
+          "id": "groq"
+        }
+      }
+    },
+    {
+      "t": 11185.5,
+      "event": {
+        "id": "evt_08e0db155001VKgYu5aqxPoOcf",
+        "type": "plugin.added",
+        "properties": {
+          "id": "kilo"
+        }
+      }
+    },
+    {
+      "t": 11185.5,
+      "event": {
+        "id": "evt_08e0db155002KEkTxdgvVJBHfx",
+        "type": "plugin.added",
+        "properties": {
+          "id": "llmgateway"
+        }
+      }
+    },
+    {
+      "t": 11185.5,
+      "event": {
+        "id": "evt_08e0db156001P0tYf5So5Es8co",
+        "type": "plugin.added",
+        "properties": {
+          "id": "mistral"
+        }
+      }
+    },
+    {
+      "t": 11185.5,
+      "event": {
+        "id": "evt_08e0db156002Qftrybrl6GXsjv",
+        "type": "plugin.added",
+        "properties": {
+          "id": "nvidia"
+        }
+      }
+    },
+    {
+      "t": 11185.5,
+      "event": {
+        "id": "evt_08e0db159001TjRhK45ZGFlaj2",
+        "type": "plugin.added",
+        "properties": {
+          "id": "opencode"
+        }
+      }
+    },
+    {
+      "t": 11185.5,
+      "event": {
+        "id": "evt_08e0db15c001bMYpDzEVsgH0oK",
+        "type": "plugin.added",
+        "properties": {
+          "id": "snowflake-cortex"
+        }
+      }
+    },
+    {
+      "t": 11185.5,
+      "event": {
+        "id": "evt_08e0db15d0011AfOCaIgdZtlMG",
+        "type": "plugin.added",
+        "properties": {
+          "id": "openai-compatible"
+        }
+      }
+    },
+    {
+      "t": 11185.5,
+      "event": {
+        "id": "evt_08e0db164001rpR3XixXQ4n8Su",
+        "type": "plugin.added",
+        "properties": {
+          "id": "openai"
+        }
+      }
+    },
+    {
+      "t": 11185.5,
+      "event": {
+        "id": "evt_08e0db165001oJvZGvd75mQ4MN",
+        "type": "plugin.added",
+        "properties": {
+          "id": "openrouter"
+        }
+      }
+    },
+    {
+      "t": 11185.5,
+      "event": {
+        "id": "evt_08e0db166001VltLfh7YQMxqNu",
+        "type": "plugin.added",
+        "properties": {
+          "id": "perplexity"
+        }
+      }
+    },
+    {
+      "t": 11185.6,
+      "event": {
+        "id": "evt_08e0db168001JPaoM2eMUKpZSR",
+        "type": "plugin.added",
+        "properties": {
+          "id": "sap-ai-core"
+        }
+      }
+    },
+    {
+      "t": 11219.7,
+      "event": {
+        "id": "evt_08e0db3a3001TCCQBa9NvPrBsc",
+        "type": "catalog.updated",
+        "properties": {}
+      }
+    },
+    {
+      "t": 11219.8,
+      "event": {
+        "id": "evt_08e0db3a5001mzLXRUB1niEV6B",
+        "type": "plugin.added",
+        "properties": {
+          "id": "togetherai"
+        }
+      }
+    },
+    {
+      "t": 11219.8,
+      "event": {
+        "id": "evt_08e0db3a6001dFPxIHDavexKLr",
+        "type": "plugin.added",
+        "properties": {
+          "id": "vercel"
+        }
+      }
+    },
+    {
+      "t": 11219.8,
+      "event": {
+        "id": "evt_08e0db3a7001CUCYZg1Fn1zqcF",
+        "type": "plugin.added",
+        "properties": {
+          "id": "venice"
+        }
+      }
+    },
+    {
+      "t": 11219.8,
+      "event": {
+        "id": "evt_08e0db3a7002ZlqOkkZfwMXs22",
+        "type": "plugin.added",
+        "properties": {
+          "id": "xai"
+        }
+      }
+    },
+    {
+      "t": 11219.8,
+      "event": {
+        "id": "evt_08e0db3a7003QWAhVzXutISIDz",
+        "type": "plugin.added",
+        "properties": {
+          "id": "zenmux"
+        }
+      }
+    },
+    {
+      "t": 11219.8,
+      "event": {
+        "id": "evt_08e0db3a8001OoXqQ7ky7x6vpQ",
+        "type": "plugin.added",
+        "properties": {
+          "id": "dynamic-provider"
+        }
+      }
+    },
+    {
+      "t": 11219.8,
+      "event": {
+        "id": "evt_08e0db3aa00144kLF2xSyaFBcl",
+        "type": "plugin.added",
+        "properties": {
+          "id": "config-plugin"
+        }
+      }
+    },
+    {
+      "t": 11219.8,
+      "event": {
+        "id": "evt_08e0db3ab001YRmdGfFT18Rgdo",
+        "type": "plugin.added",
+        "properties": {
+          "id": "config-provider"
+        }
+      }
+    },
+    {
+      "t": 11219.8,
+      "event": {
+        "id": "evt_08e0db3ac001dxu9dM9m1rGk9n",
+        "type": "plugin.added",
+        "properties": {
+          "id": "variant"
+        }
+      }
+    },
+    {
+      "t": 11219.8,
+      "event": {
+        "id": "evt_08e0db3ad001SEC6WEUrQ2YMDt",
+        "type": "reference.updated",
+        "properties": {}
+      }
+    },
+    {
+      "t": 11511.7,
+      "event": {
+        "id": "evt_08e0db4060016pQ55pwWG4AvFl",
+        "type": "integration.updated",
+        "properties": {}
+      }
+    },
+    {
+      "t": 11511.7,
+      "event": {
+        "id": "evt_08e0db4f5001zswmi0YfwiyTs3",
+        "type": "catalog.updated",
+        "properties": {}
+      }
+    },
+    {
+      "t": 14746.8,
+      "event": {
+        "id": "evt_08e0dc1360017Nbc86YHZABV6f",
+        "type": "session.updated",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "info": {
+            "id": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+            "slug": "probe",
+            "projectID": "global",
+            "directory": "/private/sandbox/project",
+            "path": "",
+            "title": "probe",
+            "agent": "build",
+            "model": {
+              "id": "big-pickle",
+              "providerID": "opencode",
+              "variant": "default"
+            },
+            "version": "0.0.0-probe",
+            "cost": 0,
+            "tokens": {
+              "input": 0,
+              "output": 0,
+              "reasoning": 0,
+              "cache": {
+                "read": 0,
+                "write": 0
+              }
+            },
+            "time": {
+              "created": 1789089643153,
+              "updated": 1789089661232
+            }
+          }
+        }
+      }
+    },
+    {
+      "t": 14746.8,
+      "event": {
+        "id": "evt_08e0dc166001L4cXKa1bA4ra9K",
+        "type": "message.updated",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "info": {
+            "id": "msg_08e0dc130001RlHgBuDBZzydQ1",
+            "role": "user",
+            "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+            "time": {
+              "created": 1789089661232
+            },
+            "agent": "build",
+            "model": {
+              "providerID": "opencode",
+              "modelID": "big-pickle"
+            }
+          }
+        }
+      }
+    },
+    {
+      "t": 14746.9,
+      "event": {
+        "id": "evt_08e0dc16c001bHnwPlma7xeNdd",
+        "type": "message.part.updated",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "part": {
+            "type": "text",
+            "text": "Use the question tool to ask me whether I prefer red or blue. Do not answer it yourself and do not guess.",
+            "messageID": "msg_08e0dc130001RlHgBuDBZzydQ1",
+            "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+            "id": "prt_08e0dc15a0015jbQOIfBpggFHP"
+          },
+          "time": 1789089661292
+        }
+      }
+    },
+    {
+      "t": 14746.9,
+      "event": {
+        "id": "evt_08e0dc171001zEQsyYuBpXmLx5",
+        "type": "session.updated",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "info": {
+            "id": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+            "slug": "probe",
+            "projectID": "global",
+            "directory": "/private/sandbox/project",
+            "path": "",
+            "title": "probe",
+            "agent": "build",
+            "model": {
+              "id": "big-pickle",
+              "providerID": "opencode",
+              "variant": "default"
+            },
+            "version": "0.0.0-probe",
+            "cost": 0,
+            "tokens": {
+              "input": 0,
+              "output": 0,
+              "reasoning": 0,
+              "cache": {
+                "read": 0,
+                "write": 0
+              }
+            },
+            "time": {
+              "created": 1789089643153,
+              "updated": 1789089661295
+            }
+          }
+        }
+      }
+    },
+    {
+      "t": 14783.6,
+      "event": {
+        "id": "evt_08e0dc18600191a5a5jR2zeu8z",
+        "type": "session.status",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "status": {
+            "type": "busy"
+          }
+        }
+      }
+    },
+    {
+      "t": 14783.6,
+      "event": {
+        "id": "evt_08e0dc194001W1nxF27zSYf0k5",
+        "type": "message.updated",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "info": {
+            "id": "msg_08e0dc194001nOzi7G94SV7dQw",
+            "parentID": "msg_08e0dc130001RlHgBuDBZzydQ1",
+            "role": "assistant",
+            "mode": "build",
+            "agent": "build",
+            "path": {
+              "cwd": "/private/sandbox/project",
+              "root": "/private/sandbox/project"
+            },
+            "cost": 0,
+            "tokens": {
+              "input": 0,
+              "output": 0,
+              "reasoning": 0,
+              "cache": {
+                "read": 0,
+                "write": 0
+              }
+            },
+            "modelID": "big-pickle",
+            "providerID": "opencode",
+            "time": {
+              "created": 1789089661332
+            },
+            "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0"
+          }
+        }
+      }
+    },
+    {
+      "t": 15759.2,
+      "event": {
+        "id": "evt_08e0dc57c001B0FN4GvIEYdldV",
+        "type": "session.updated",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "info": {
+            "id": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+            "slug": "probe",
+            "projectID": "global",
+            "directory": "/private/sandbox/project",
+            "path": "",
+            "title": "probe",
+            "agent": "build",
+            "model": {
+              "id": "big-pickle",
+              "providerID": "opencode",
+              "variant": "default"
+            },
+            "version": "0.0.0-probe",
+            "summary": {
+              "additions": 0,
+              "deletions": 0,
+              "files": 0
+            },
+            "cost": 0,
+            "tokens": {
+              "input": 0,
+              "output": 0,
+              "reasoning": 0,
+              "cache": {
+                "read": 0,
+                "write": 0
+              }
+            },
+            "time": {
+              "created": 1789089643153,
+              "updated": 1789089662328
+            }
+          }
+        }
+      }
+    },
+    {
+      "t": 15759.2,
+      "event": {
+        "id": "evt_08e0dc581001t3sWXEQjBFafzy",
+        "type": "session.diff",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "diff": []
+        }
+      }
+    },
+    {
+      "t": 15759.2,
+      "event": {
+        "id": "evt_08e0dc583001ydLIRV2G31A72s",
+        "type": "message.updated",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "info": {
+            "role": "user",
+            "time": {
+              "created": 1789089661232
+            },
+            "agent": "build",
+            "model": {
+              "providerID": "opencode",
+              "modelID": "big-pickle"
+            },
+            "id": "msg_08e0dc130001RlHgBuDBZzydQ1",
+            "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+            "summary": {
+              "diffs": []
+            }
+          }
+        }
+      }
+    },
+    {
+      "t": 16047.6,
+      "event": {
+        "id": "evt_08e0dc699001643vCP0LPP9RGe",
+        "type": "plugin.added",
+        "properties": {
+          "id": "core/config-reference"
+        }
+      }
+    },
+    {
+      "t": 16047.6,
+      "event": {
+        "id": "evt_08e0dc69a001bLnXT66ITvDNfn",
+        "type": "plugin.added",
+        "properties": {
+          "id": "agent"
+        }
+      }
+    },
+    {
+      "t": 16047.6,
+      "event": {
+        "id": "evt_08e0dc69a002tXTlRw5vP0JSQC",
+        "type": "plugin.added",
+        "properties": {
+          "id": "command"
+        }
+      }
+    },
+    {
+      "t": 16047.6,
+      "event": {
+        "id": "evt_08e0dc69a003Bm3WfcdBLGBg53",
+        "type": "plugin.added",
+        "properties": {
+          "id": "skill"
+        }
+      }
+    },
+    {
+      "t": 16047.6,
+      "event": {
+        "id": "evt_08e0dc69b001EHyYTtLrVOfk1C",
+        "type": "plugin.added",
+        "properties": {
+          "id": "models-dev"
+        }
+      }
+    },
+    {
+      "t": 16047.6,
+      "event": {
+        "id": "evt_08e0dc69b002wXg3X0pU55Yj0F",
+        "type": "plugin.added",
+        "properties": {
+          "id": "config-agent"
+        }
+      }
+    },
+    {
+      "t": 16047.6,
+      "event": {
+        "id": "evt_08e0dc69b003K2RMYHAKW5N93w",
+        "type": "plugin.added",
+        "properties": {
+          "id": "config-command"
+        }
+      }
+    },
+    {
+      "t": 16047.6,
+      "event": {
+        "id": "evt_08e0dc69b004cq706GCIA6dHeY",
+        "type": "plugin.added",
+        "properties": {
+          "id": "config-skill"
+        }
+      }
+    },
+    {
+      "t": 16047.6,
+      "event": {
+        "id": "evt_08e0dc69c001eHgsK90pYJNERZ",
+        "type": "plugin.added",
+        "properties": {
+          "id": "alibaba"
+        }
+      }
+    },
+    {
+      "t": 16047.6,
+      "event": {
+        "id": "evt_08e0dc69c002gDzf1CqUlEKbD8",
+        "type": "plugin.added",
+        "properties": {
+          "id": "amazon-bedrock"
+        }
+      }
+    },
+    {
+      "t": 16047.6,
+      "event": {
+        "id": "evt_08e0dc69c003TmterNATPlL0P3",
+        "type": "plugin.added",
+        "properties": {
+          "id": "anthropic"
+        }
+      }
+    },
+    {
+      "t": 16047.6,
+      "event": {
+        "id": "evt_08e0dc69d001a8tOkY6A1TtDes",
+        "type": "plugin.added",
+        "properties": {
+          "id": "azure-cognitive-services"
+        }
+      }
+    },
+    {
+      "t": 16062.4,
+      "event": {
+        "id": "evt_08e0dc6a6001IuPaQmPrfeXCsA",
+        "type": "plugin.added",
+        "properties": {
+          "id": "azure"
+        }
+      }
+    },
+    {
+      "t": 16062.4,
+      "event": {
+        "id": "evt_08e0dc6a7001IrcZmUFPSEPj4T",
+        "type": "plugin.added",
+        "properties": {
+          "id": "cerebras"
+        }
+      }
+    },
+    {
+      "t": 16062.5,
+      "event": {
+        "id": "evt_08e0dc6a7002NC2ecyN3Tt1nHY",
+        "type": "plugin.added",
+        "properties": {
+          "id": "cloudflare-ai-gateway"
+        }
+      }
+    },
+    {
+      "t": 16062.5,
+      "event": {
+        "id": "evt_08e0dc6a7003NylymkBSEB4h4o",
+        "type": "plugin.added",
+        "properties": {
+          "id": "cloudflare-workers-ai"
+        }
+      }
+    },
+    {
+      "t": 16062.5,
+      "event": {
+        "id": "evt_08e0dc6a70049DzFCV1Oqis55s",
+        "type": "plugin.added",
+        "properties": {
+          "id": "cohere"
+        }
+      }
+    },
+    {
+      "t": 16062.5,
+      "event": {
+        "id": "evt_08e0dc6a70052Bgz0NrCxfXWXd",
+        "type": "plugin.added",
+        "properties": {
+          "id": "deepinfra"
+        }
+      }
+    },
+    {
+      "t": 16062.5,
+      "event": {
+        "id": "evt_08e0dc6a8001MhzxwZnYpGDpk3",
+        "type": "plugin.added",
+        "properties": {
+          "id": "gateway"
+        }
+      }
+    },
+    {
+      "t": 16062.5,
+      "event": {
+        "id": "evt_08e0dc6a8002GOYbLljMZEIJgK",
+        "type": "plugin.added",
+        "properties": {
+          "id": "github-copilot"
+        }
+      }
+    },
+    {
+      "t": 16062.5,
+      "event": {
+        "id": "evt_08e0dc6a8003cpPYofUFntcAGN",
+        "type": "plugin.added",
+        "properties": {
+          "id": "gitlab"
+        }
+      }
+    },
+    {
+      "t": 16062.5,
+      "event": {
+        "id": "evt_08e0dc6a80046lxuCQL4EY9V5b",
+        "type": "plugin.added",
+        "properties": {
+          "id": "google"
+        }
+      }
+    },
+    {
+      "t": 16062.5,
+      "event": {
+        "id": "evt_08e0dc6a9001nFb23MJu5LYT9w",
+        "type": "plugin.added",
+        "properties": {
+          "id": "google-vertex-anthropic"
+        }
+      }
+    },
+    {
+      "t": 16062.5,
+      "event": {
+        "id": "evt_08e0dc6ab001TmJ7eUddNJwlMl",
+        "type": "plugin.added",
+        "properties": {
+          "id": "google-vertex"
+        }
+      }
+    },
+    {
+      "t": 16426.9,
+      "event": {
+        "id": "evt_08e0dc6ba00102p2Vl26FNrmcH",
+        "type": "plugin.added",
+        "properties": {
+          "id": "groq"
+        }
+      }
+    },
+    {
+      "t": 16426.9,
+      "event": {
+        "id": "evt_08e0dc6ba0023d5USejZfQ8H7M",
+        "type": "plugin.added",
+        "properties": {
+          "id": "kilo"
+        }
+      }
+    },
+    {
+      "t": 16426.9,
+      "event": {
+        "id": "evt_08e0dc6ba00362LAGQhHOPMWWe",
+        "type": "plugin.added",
+        "properties": {
+          "id": "llmgateway"
+        }
+      }
+    },
+    {
+      "t": 16426.9,
+      "event": {
+        "id": "evt_08e0dc6ba004bwk0Wrxy3T6DQX",
+        "type": "plugin.added",
+        "properties": {
+          "id": "mistral"
+        }
+      }
+    },
+    {
+      "t": 16426.9,
+      "event": {
+        "id": "evt_08e0dc6ba005bKkrDrVSBdlonr",
+        "type": "plugin.added",
+        "properties": {
+          "id": "nvidia"
+        }
+      }
+    },
+    {
+      "t": 16426.9,
+      "event": {
+        "id": "evt_08e0dc6bc001CQHcOudxK3Wedk",
+        "type": "plugin.added",
+        "properties": {
+          "id": "opencode"
+        }
+      }
+    },
+    {
+      "t": 16426.9,
+      "event": {
+        "id": "evt_08e0dc6bc002ce6E1fODagomrW",
+        "type": "plugin.added",
+        "properties": {
+          "id": "snowflake-cortex"
+        }
+      }
+    },
+    {
+      "t": 16426.9,
+      "event": {
+        "id": "evt_08e0dc6bc003WTsc6QNITUmLcs",
+        "type": "plugin.added",
+        "properties": {
+          "id": "openai-compatible"
+        }
+      }
+    },
+    {
+      "t": 16426.9,
+      "event": {
+        "id": "evt_08e0dc6bc004DZz1C9988d2cb2",
+        "type": "plugin.added",
+        "properties": {
+          "id": "openai"
+        }
+      }
+    },
+    {
+      "t": 16426.9,
+      "event": {
+        "id": "evt_08e0dc6bc005vMfW1TFcIrKHuG",
+        "type": "plugin.added",
+        "properties": {
+          "id": "openrouter"
+        }
+      }
+    },
+    {
+      "t": 16426.9,
+      "event": {
+        "id": "evt_08e0dc6bc006Ge1OIIfYCBEKhV",
+        "type": "plugin.added",
+        "properties": {
+          "id": "perplexity"
+        }
+      }
+    },
+    {
+      "t": 16426.9,
+      "event": {
+        "id": "evt_08e0dc6bd001FVqzSXXvKPyM9b",
+        "type": "plugin.added",
+        "properties": {
+          "id": "sap-ai-core"
+        }
+      }
+    },
+    {
+      "t": 16446.6,
+      "event": {
+        "id": "evt_08e0dc819001ruztgQgsupl7kf",
+        "type": "catalog.updated",
+        "properties": {}
+      }
+    },
+    {
+      "t": 16446.7,
+      "event": {
+        "id": "evt_08e0dc81a001jgjNKB93a9w70a",
+        "type": "plugin.added",
+        "properties": {
+          "id": "togetherai"
+        }
+      }
+    },
+    {
+      "t": 16446.8,
+      "event": {
+        "id": "evt_08e0dc81a002rDuHW8sO9TcEj9",
+        "type": "plugin.added",
+        "properties": {
+          "id": "vercel"
+        }
+      }
+    },
+    {
+      "t": 16446.8,
+      "event": {
+        "id": "evt_08e0dc81b001swQiHuG112PlsV",
+        "type": "plugin.added",
+        "properties": {
+          "id": "venice"
+        }
+      }
+    },
+    {
+      "t": 16446.8,
+      "event": {
+        "id": "evt_08e0dc81c001o3jG85Zt5adKly",
+        "type": "plugin.added",
+        "properties": {
+          "id": "xai"
+        }
+      }
+    },
+    {
+      "t": 16446.8,
+      "event": {
+        "id": "evt_08e0dc81d001XCx42weLDGE0jT",
+        "type": "plugin.added",
+        "properties": {
+          "id": "zenmux"
+        }
+      }
+    },
+    {
+      "t": 16446.8,
+      "event": {
+        "id": "evt_08e0dc81d002j3Up3T1ahTCRTW",
+        "type": "plugin.added",
+        "properties": {
+          "id": "dynamic-provider"
+        }
+      }
+    },
+    {
+      "t": 16446.8,
+      "event": {
+        "id": "evt_08e0dc823001GaTJn0GrJfsvhH",
+        "type": "plugin.added",
+        "properties": {
+          "id": "config-plugin"
+        }
+      }
+    },
+    {
+      "t": 16446.8,
+      "event": {
+        "id": "evt_08e0dc826001EkkYiHb3UF9nf4",
+        "type": "plugin.added",
+        "properties": {
+          "id": "config-provider"
+        }
+      }
+    },
+    {
+      "t": 16446.8,
+      "event": {
+        "id": "evt_08e0dc8270014rl9Go4uRQYUhp",
+        "type": "plugin.added",
+        "properties": {
+          "id": "variant"
+        }
+      }
+    },
+    {
+      "t": 16446.8,
+      "event": {
+        "id": "evt_08e0dc82800115NZxu8LZOqytl",
+        "type": "reference.updated",
+        "properties": {}
+      }
+    },
+    {
+      "t": 16689.6,
+      "event": {
+        "id": "evt_08e0dc84f001sm2eOC8GGfhc7j",
+        "type": "integration.updated",
+        "properties": {}
+      }
+    },
+    {
+      "t": 16689.6,
+      "event": {
+        "id": "evt_08e0dc92d00141AaDUQkbxEOib",
+        "type": "catalog.updated",
+        "properties": {}
+      }
+    },
+    {
+      "t": 19203.1,
+      "event": {
+        "id": "evt_08e0dd2d5001U0SfpbOYURfaB3",
+        "type": "server.heartbeat",
+        "properties": {}
+      }
+    },
+    {
+      "t": 19607.4,
+      "event": {
+        "id": "evt_08e0dd465001gZmxFn3RqTC7RU",
+        "type": "session.status",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "status": {
+            "type": "busy"
+          }
+        }
+      }
+    },
+    {
+      "t": 20486.9,
+      "event": {
+        "id": "evt_08e0dd7d2001kmIYJhrECiNtG6",
+        "type": "message.part.updated",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "part": {
+            "id": "prt_08e0dd7d0001ilL4tdskVFh6bA",
+            "messageID": "msg_08e0dc194001nOzi7G94SV7dQw",
+            "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+            "snapshot": "68d285291def23366dc0e95b30e290202fd71ced",
+            "type": "step-start"
+          },
+          "time": 1789089667026
+        }
+      }
+    },
+    {
+      "t": 20487,
+      "event": {
+        "id": "evt_08e0dd7eb001B452rdAB0XgpGl",
+        "type": "message.part.updated",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "part": {
+            "id": "prt_08e0dd7ea001LIrL7ItyVS0L9X",
+            "messageID": "msg_08e0dc194001nOzi7G94SV7dQw",
+            "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+            "type": "reasoning",
+            "text": "",
+            "time": {
+              "start": 1789089667050
+            }
+          },
+          "time": 1789089667050
+        }
+      }
+    },
+    {
+      "t": 20487,
+      "event": {
+        "id": "evt_08e0dd7fe001MnbwTYK3ACr8i1",
+        "type": "message.part.delta",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "messageID": "msg_08e0dc194001nOzi7G94SV7dQw",
+          "partID": "prt_08e0dd7ea001LIrL7ItyVS0L9X",
+          "field": "text",
+          "delta": "The"
+        }
+      }
+    },
+    {
+      "t": 20977.8,
+      "event": {
+        "id": "evt_08e0dd9e90013CdwS5PS903u8r",
+        "type": "message.part.delta",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "messageID": "msg_08e0dc194001nOzi7G94SV7dQw",
+          "partID": "prt_08e0dd7ea001LIrL7ItyVS0L9X",
+          "field": "text",
+          "delta": " user wants me to use the"
+        }
+      }
+    },
+    {
+      "t": 20985.9,
+      "event": {
+        "id": "evt_08e0dd9f8001QnrwmRVoyhwN74",
+        "type": "message.part.delta",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "messageID": "msg_08e0dc194001nOzi7G94SV7dQw",
+          "partID": "prt_08e0dd7ea001LIrL7ItyVS0L9X",
+          "field": "text",
+          "delta": " question tool to ask whether"
+        }
+      }
+    },
+    {
+      "t": 21023.2,
+      "event": {
+        "id": "evt_08e0dda1d001lik7IiX1zfGJ7b",
+        "type": "message.part.delta",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "messageID": "msg_08e0dc194001nOzi7G94SV7dQw",
+          "partID": "prt_08e0dd7ea001LIrL7ItyVS0L9X",
+          "field": "text",
+          "delta": " they prefer red or blue."
+        }
+      }
+    },
+    {
+      "t": 21052.4,
+      "event": {
+        "id": "evt_08e0dda3a001cQ5BYPfIfXfB8d",
+        "type": "message.part.delta",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "messageID": "msg_08e0dc194001nOzi7G94SV7dQw",
+          "partID": "prt_08e0dd7ea001LIrL7ItyVS0L9X",
+          "field": "text",
+          "delta": " Simple"
+        }
+      }
+    },
+    {
+      "t": 21052.4,
+      "event": {
+        "id": "evt_08e0dda3a002K5eXZtiC2gISTU",
+        "type": "message.part.delta",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "messageID": "msg_08e0dc194001nOzi7G94SV7dQw",
+          "partID": "prt_08e0dd7ea001LIrL7ItyVS0L9X",
+          "field": "text",
+          "delta": "."
+        }
+      }
+    },
+    {
+      "t": 21103.7,
+      "event": {
+        "id": "evt_08e0dda65001ChE0CqSSxjeNyB",
+        "type": "message.part.updated",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "part": {
+            "id": "prt_08e0dd7ea001LIrL7ItyVS0L9X",
+            "messageID": "msg_08e0dc194001nOzi7G94SV7dQw",
+            "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+            "type": "reasoning",
+            "text": "The user wants me to use the question tool to ask whether they prefer red or blue. Simple.",
+            "time": {
+              "start": 1789089667050,
+              "end": 1789089667684
+            }
+          },
+          "time": 1789089667685
+        }
+      }
+    },
+    {
+      "t": 21103.8,
+      "event": {
+        "id": "evt_08e0dda6a001PtKygEesnBlrx7",
+        "type": "message.part.updated",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "part": {
+            "id": "prt_08e0dda6a001C7gwqx0XRpc10z",
+            "messageID": "msg_08e0dc194001nOzi7G94SV7dQw",
+            "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+            "type": "tool",
+            "tool": "question",
+            "callID": "call_240c5f26882d433c8815bbef",
+            "state": {
+              "status": "pending",
+              "input": {},
+              "raw": ""
+            }
+          },
+          "time": 1789089667690
+        }
+      }
+    },
+    {
+      "t": 21622.2,
+      "event": {
+        "id": "evt_08e0ddc61001iLcW4t4MVXPOEM",
+        "type": "question.asked",
+        "properties": {
+          "id": "que_08e0ddc5f001oyEb9jhdFwaBzc",
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "questions": [
+            {
+              "question": "Do you prefer the color red or blue?",
+              "header": "Color preference",
+              "options": [
+                {
+                  "label": "Red",
+                  "description": "The color red"
+                },
+                {
+                  "label": "Blue",
+                  "description": "The color blue"
+                }
+              ]
+            }
+          ],
+          "tool": {
+            "messageID": "msg_08e0dc194001nOzi7G94SV7dQw",
+            "callID": "call_240c5f26882d433c8815bbef"
+          }
+        }
+      }
+    },
+    {
+      "t": 21622.3,
+      "event": {
+        "id": "evt_08e0ddc69001M2yIKSB0YebHXI",
+        "type": "message.part.updated",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "part": {
+            "type": "tool",
+            "tool": "question",
+            "callID": "call_240c5f26882d433c8815bbef",
+            "state": {
+              "status": "running",
+              "input": {
+                "questions": [
+                  {
+                    "question": "Do you prefer the color red or blue?",
+                    "header": "Color preference",
+                    "options": [
+                      {
+                        "label": "Red",
+                        "description": "The color red"
+                      },
+                      {
+                        "label": "Blue",
+                        "description": "The color blue"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "time": {
+                "start": 1789089668201
+              }
+            },
+            "id": "prt_08e0dda6a001C7gwqx0XRpc10z",
+            "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+            "messageID": "msg_08e0dc194001nOzi7G94SV7dQw"
+          },
+          "time": 1789089668201
+        }
+      }
+    },
+    {
+      "t": 21724.3,
+      "event": {
+        "id": "evt_08e0ddcc0001mkRKnGQTxHEtMV",
+        "type": "question.rejected",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "requestID": "que_08e0ddc5f001oyEb9jhdFwaBzc"
+        }
+      }
+    },
+    {
+      "t": 21724.3,
+      "event": {
+        "id": "evt_08e0ddcca001cx9bgiTNyfm8Xt",
+        "type": "message.part.updated",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "part": {
+            "type": "tool",
+            "tool": "question",
+            "callID": "call_240c5f26882d433c8815bbef",
+            "state": {
+              "status": "error",
+              "input": {
+                "questions": [
+                  {
+                    "question": "Do you prefer the color red or blue?",
+                    "header": "Color preference",
+                    "options": [
+                      {
+                        "label": "Red",
+                        "description": "The color red"
+                      },
+                      {
+                        "label": "Blue",
+                        "description": "The color blue"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "error": "The user dismissed this question",
+              "time": {
+                "start": 1789089668201,
+                "end": 1789089668298
+              }
+            },
+            "id": "prt_08e0dda6a001C7gwqx0XRpc10z",
+            "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+            "messageID": "msg_08e0dc194001nOzi7G94SV7dQw"
+          },
+          "time": 1789089668298
+        }
+      }
+    },
+    {
+      "t": 21934.1,
+      "event": {
+        "id": "evt_08e0ddda0001w45UCWoHgtCzFB",
+        "type": "message.part.updated",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "part": {
+            "id": "prt_08e0ddda0001kClsH2YJ6TkMBz",
+            "reason": "tool-calls",
+            "snapshot": "68d285291def23366dc0e95b30e290202fd71ced",
+            "messageID": "msg_08e0dc194001nOzi7G94SV7dQw",
+            "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+            "type": "step-finish",
+            "tokens": {
+              "total": 8512,
+              "input": 6602,
+              "output": 118,
+              "reasoning": 0,
+              "cache": {
+                "write": 0,
+                "read": 1792
+              }
+            },
+            "cost": 0
+          },
+          "time": 1789089668512
+        }
+      }
+    },
+    {
+      "t": 21934.1,
+      "event": {
+        "id": "evt_08e0ddda8001TIe58cTWu5kzDc",
+        "type": "message.updated",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "info": {
+            "id": "msg_08e0dc194001nOzi7G94SV7dQw",
+            "parentID": "msg_08e0dc130001RlHgBuDBZzydQ1",
+            "role": "assistant",
+            "mode": "build",
+            "agent": "build",
+            "path": {
+              "cwd": "/private/sandbox/project",
+              "root": "/private/sandbox/project"
+            },
+            "cost": 0,
+            "tokens": {
+              "total": 8512,
+              "input": 6602,
+              "output": 118,
+              "reasoning": 0,
+              "cache": {
+                "write": 0,
+                "read": 1792
+              }
+            },
+            "modelID": "big-pickle",
+            "providerID": "opencode",
+            "time": {
+              "created": 1789089661332
+            },
+            "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+            "finish": "tool-calls"
+          }
+        }
+      }
+    },
+    {
+      "t": 22206.6,
+      "event": {
+        "id": "evt_08e0dde99001LwoIpVnyo62cUP",
+        "type": "message.updated",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "info": {
+            "id": "msg_08e0dc194001nOzi7G94SV7dQw",
+            "parentID": "msg_08e0dc130001RlHgBuDBZzydQ1",
+            "role": "assistant",
+            "mode": "build",
+            "agent": "build",
+            "path": {
+              "cwd": "/private/sandbox/project",
+              "root": "/private/sandbox/project"
+            },
+            "cost": 0,
+            "tokens": {
+              "total": 8512,
+              "input": 6602,
+              "output": 118,
+              "reasoning": 0,
+              "cache": {
+                "write": 0,
+                "read": 1792
+              }
+            },
+            "modelID": "big-pickle",
+            "providerID": "opencode",
+            "time": {
+              "created": 1789089661332,
+              "completed": 1789089668760
+            },
+            "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+            "finish": "tool-calls"
+          }
+        }
+      }
+    },
+    {
+      "t": 22206.6,
+      "event": {
+        "id": "evt_08e0ddeaa0014sKFJ1zHBZ0Cd4",
+        "type": "session.status",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "status": {
+            "type": "idle"
+          }
+        }
+      }
+    },
+    {
+      "t": 22206.6,
+      "event": {
+        "id": "evt_08e0ddeac0016xxNBdplCpkaVS",
+        "type": "session.idle",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0"
+        }
+      }
+    },
+    {
+      "t": 22206.6,
+      "event": {
+        "id": "evt_08e0ddeb6001n0vxVljUSkZHjl",
+        "type": "session.updated",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "info": {
+            "id": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+            "slug": "probe",
+            "projectID": "global",
+            "directory": "/private/sandbox/project",
+            "path": "",
+            "title": "probe",
+            "agent": "build",
+            "model": {
+              "id": "big-pickle",
+              "providerID": "opencode",
+              "variant": "default"
+            },
+            "version": "0.0.0-probe",
+            "summary": {
+              "additions": 0,
+              "deletions": 0,
+              "files": 0
+            },
+            "cost": 0,
+            "tokens": {
+              "input": 6602,
+              "output": 118,
+              "reasoning": 0,
+              "cache": {
+                "read": 1792,
+                "write": 0
+              }
+            },
+            "time": {
+              "created": 1789089643153,
+              "updated": 1789089668789
+            }
+          }
+        }
+      }
+    },
+    {
+      "t": 22206.6,
+      "event": {
+        "id": "evt_08e0ddeb90016FpyXOPcojRFlB",
+        "type": "session.diff",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "diff": []
+        }
+      }
+    },
+    {
+      "t": 22375.9,
+      "event": {
+        "id": "evt_08e0ddf63001bMDrCB4MDKriVi",
+        "type": "message.updated",
+        "properties": {
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "info": {
+            "role": "user",
+            "time": {
+              "created": 1789089661232
+            },
+            "agent": "build",
+            "model": {
+              "providerID": "opencode",
+              "modelID": "big-pickle"
+            },
+            "summary": {
+              "diffs": []
+            },
+            "id": "msg_08e0dc130001RlHgBuDBZzydQ1",
+            "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0"
+          }
+        }
+      }
+    }
+  ],
+  "durable": [
+    {
+      "t": 14693.8,
+      "rowid": 1,
+      "aggregateID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+      "seq": 0,
+      "type": "session.updated.1",
+      "data": {
+        "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+        "info": {
+          "id": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "slug": "probe",
+          "projectID": "global",
+          "directory": "/private/sandbox/project",
+          "path": "",
+          "cost": 0,
+          "tokens": {
+            "input": 0,
+            "output": 0,
+            "reasoning": 0,
+            "cache": {
+              "read": 0,
+              "write": 0
+            }
+          },
+          "title": "probe",
+          "agent": "build",
+          "model": {
+            "id": "big-pickle",
+            "providerID": "opencode",
+            "variant": "default"
+          },
+          "version": "0.0.0-probe",
+          "time": {
+            "created": 1789089643153,
+            "updated": 1789089661232
+          }
+        }
+      }
+    },
+    {
+      "t": 14714.3,
+      "rowid": 2,
+      "aggregateID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+      "seq": 1,
+      "type": "message.updated.1",
+      "data": {
+        "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+        "info": {
+          "id": "msg_08e0dc130001RlHgBuDBZzydQ1",
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "role": "user",
+          "time": {
+            "created": 1789089661232
+          },
+          "agent": "build",
+          "model": {
+            "providerID": "opencode",
+            "modelID": "big-pickle"
+          }
+        }
+      }
+    },
+    {
+      "t": 14714.4,
+      "rowid": 3,
+      "aggregateID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+      "seq": 2,
+      "type": "message.part.updated.1",
+      "data": {
+        "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+        "part": {
+          "id": "prt_08e0dc15a0015jbQOIfBpggFHP",
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "messageID": "msg_08e0dc130001RlHgBuDBZzydQ1",
+          "type": "text",
+          "text": "Use the question tool to ask me whether I prefer red or blue. Do not answer it yourself and do not guess."
+        },
+        "time": 1789089661292
+      }
+    },
+    {
+      "t": 14714.5,
+      "rowid": 4,
+      "aggregateID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+      "seq": 3,
+      "type": "session.updated.1",
+      "data": {
+        "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+        "info": {
+          "id": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "slug": "probe",
+          "projectID": "global",
+          "directory": "/private/sandbox/project",
+          "path": "",
+          "cost": 0,
+          "tokens": {
+            "input": 0,
+            "output": 0,
+            "reasoning": 0,
+            "cache": {
+              "read": 0,
+              "write": 0
+            }
+          },
+          "title": "probe",
+          "agent": "build",
+          "model": {
+            "id": "big-pickle",
+            "providerID": "opencode",
+            "variant": "default"
+          },
+          "version": "0.0.0-probe",
+          "time": {
+            "created": 1789089643153,
+            "updated": 1789089661295
+          }
+        }
+      }
+    },
+    {
+      "t": 14757.3,
+      "rowid": 5,
+      "aggregateID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+      "seq": 4,
+      "type": "message.updated.1",
+      "data": {
+        "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+        "info": {
+          "id": "msg_08e0dc194001nOzi7G94SV7dQw",
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "role": "assistant",
+          "time": {
+            "created": 1789089661332
+          },
+          "parentID": "msg_08e0dc130001RlHgBuDBZzydQ1",
+          "modelID": "big-pickle",
+          "providerID": "opencode",
+          "mode": "build",
+          "agent": "build",
+          "path": {
+            "cwd": "/private/sandbox/project",
+            "root": "/private/sandbox/project"
+          },
+          "cost": 0,
+          "tokens": {
+            "input": 0,
+            "output": 0,
+            "reasoning": 0,
+            "cache": {
+              "read": 0,
+              "write": 0
+            }
+          }
+        }
+      }
+    },
+    {
+      "t": 15753.4,
+      "rowid": 6,
+      "aggregateID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+      "seq": 5,
+      "type": "session.updated.1",
+      "data": {
+        "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+        "info": {
+          "id": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "slug": "probe",
+          "projectID": "global",
+          "directory": "/private/sandbox/project",
+          "path": "",
+          "summary": {
+            "additions": 0,
+            "deletions": 0,
+            "files": 0
+          },
+          "cost": 0,
+          "tokens": {
+            "input": 0,
+            "output": 0,
+            "reasoning": 0,
+            "cache": {
+              "read": 0,
+              "write": 0
+            }
+          },
+          "title": "probe",
+          "agent": "build",
+          "model": {
+            "id": "big-pickle",
+            "providerID": "opencode",
+            "variant": "default"
+          },
+          "version": "0.0.0-probe",
+          "time": {
+            "created": 1789089643153,
+            "updated": 1789089662328
+          }
+        }
+      }
+    },
+    {
+      "t": 15753.4,
+      "rowid": 7,
+      "aggregateID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+      "seq": 6,
+      "type": "message.updated.1",
+      "data": {
+        "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+        "info": {
+          "id": "msg_08e0dc130001RlHgBuDBZzydQ1",
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "role": "user",
+          "time": {
+            "created": 1789089661232
+          },
+          "summary": {
+            "diffs": []
+          },
+          "agent": "build",
+          "model": {
+            "providerID": "opencode",
+            "modelID": "big-pickle"
+          }
+        }
+      }
+    },
+    {
+      "t": 20469,
+      "rowid": 8,
+      "aggregateID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+      "seq": 7,
+      "type": "message.part.updated.1",
+      "data": {
+        "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+        "part": {
+          "id": "prt_08e0dd7d0001ilL4tdskVFh6bA",
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "messageID": "msg_08e0dc194001nOzi7G94SV7dQw",
+          "type": "step-start",
+          "snapshot": "68d285291def23366dc0e95b30e290202fd71ced"
+        },
+        "time": 1789089667026
+      }
+    },
+    {
+      "t": 20487.1,
+      "rowid": 9,
+      "aggregateID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+      "seq": 8,
+      "type": "message.part.updated.1",
+      "data": {
+        "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+        "part": {
+          "id": "prt_08e0dd7ea001LIrL7ItyVS0L9X",
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "messageID": "msg_08e0dc194001nOzi7G94SV7dQw",
+          "type": "reasoning",
+          "text": "",
+          "time": {
+            "start": 1789089667050
+          }
+        },
+        "time": 1789089667050
+      }
+    },
+    {
+      "t": 21104,
+      "rowid": 10,
+      "aggregateID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+      "seq": 9,
+      "type": "message.part.updated.1",
+      "data": {
+        "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+        "part": {
+          "id": "prt_08e0dd7ea001LIrL7ItyVS0L9X",
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "messageID": "msg_08e0dc194001nOzi7G94SV7dQw",
+          "type": "reasoning",
+          "text": "The user wants me to use the question tool to ask whether they prefer red or blue. Simple.",
+          "time": {
+            "start": 1789089667050,
+            "end": 1789089667684
+          }
+        },
+        "time": 1789089667685
+      }
+    },
+    {
+      "t": 21104,
+      "rowid": 11,
+      "aggregateID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+      "seq": 10,
+      "type": "message.part.updated.1",
+      "data": {
+        "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+        "part": {
+          "id": "prt_08e0dda6a001C7gwqx0XRpc10z",
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "messageID": "msg_08e0dc194001nOzi7G94SV7dQw",
+          "type": "tool",
+          "callID": "call_240c5f26882d433c8815bbef",
+          "tool": "question",
+          "state": {
+            "status": "pending",
+            "input": {},
+            "raw": ""
+          }
+        },
+        "time": 1789089667690
+      }
+    },
+    {
+      "t": 21627.6,
+      "rowid": 12,
+      "aggregateID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+      "seq": 11,
+      "type": "message.part.updated.1",
+      "data": {
+        "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+        "part": {
+          "id": "prt_08e0dda6a001C7gwqx0XRpc10z",
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "messageID": "msg_08e0dc194001nOzi7G94SV7dQw",
+          "type": "tool",
+          "callID": "call_240c5f26882d433c8815bbef",
+          "tool": "question",
+          "state": {
+            "status": "running",
+            "input": {
+              "questions": [
+                {
+                  "question": "Do you prefer the color red or blue?",
+                  "header": "Color preference",
+                  "options": [
+                    {
+                      "label": "Red",
+                      "description": "The color red"
+                    },
+                    {
+                      "label": "Blue",
+                      "description": "The color blue"
+                    }
+                  ]
+                }
+              ]
+            },
+            "time": {
+              "start": 1789089668201
+            }
+          }
+        },
+        "time": 1789089668201
+      }
+    },
+    {
+      "t": 21714.1,
+      "rowid": 13,
+      "aggregateID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+      "seq": 12,
+      "type": "message.part.updated.1",
+      "data": {
+        "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+        "part": {
+          "id": "prt_08e0dda6a001C7gwqx0XRpc10z",
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "messageID": "msg_08e0dc194001nOzi7G94SV7dQw",
+          "type": "tool",
+          "callID": "call_240c5f26882d433c8815bbef",
+          "tool": "question",
+          "state": {
+            "status": "error",
+            "input": {
+              "questions": [
+                {
+                  "question": "Do you prefer the color red or blue?",
+                  "header": "Color preference",
+                  "options": [
+                    {
+                      "label": "Red",
+                      "description": "The color red"
+                    },
+                    {
+                      "label": "Blue",
+                      "description": "The color blue"
+                    }
+                  ]
+                }
+              ]
+            },
+            "error": "The user dismissed this question",
+            "time": {
+              "start": 1789089668201,
+              "end": 1789089668298
+            }
+          }
+        },
+        "time": 1789089668298
+      }
+    },
+    {
+      "t": 21945.5,
+      "rowid": 14,
+      "aggregateID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+      "seq": 13,
+      "type": "message.part.updated.1",
+      "data": {
+        "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+        "part": {
+          "id": "prt_08e0ddda0001kClsH2YJ6TkMBz",
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "messageID": "msg_08e0dc194001nOzi7G94SV7dQw",
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "68d285291def23366dc0e95b30e290202fd71ced",
+          "cost": 0,
+          "tokens": {
+            "total": 8512,
+            "input": 6602,
+            "output": 118,
+            "reasoning": 0,
+            "cache": {
+              "read": 1792,
+              "write": 0
+            }
+          }
+        },
+        "time": 1789089668512
+      }
+    },
+    {
+      "t": 21945.6,
+      "rowid": 15,
+      "aggregateID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+      "seq": 14,
+      "type": "message.updated.1",
+      "data": {
+        "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+        "info": {
+          "id": "msg_08e0dc194001nOzi7G94SV7dQw",
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "role": "assistant",
+          "time": {
+            "created": 1789089661332
+          },
+          "parentID": "msg_08e0dc130001RlHgBuDBZzydQ1",
+          "modelID": "big-pickle",
+          "providerID": "opencode",
+          "mode": "build",
+          "agent": "build",
+          "path": {
+            "cwd": "/private/sandbox/project",
+            "root": "/private/sandbox/project"
+          },
+          "cost": 0,
+          "tokens": {
+            "total": 8512,
+            "input": 6602,
+            "output": 118,
+            "reasoning": 0,
+            "cache": {
+              "read": 1792,
+              "write": 0
+            }
+          },
+          "finish": "tool-calls"
+        }
+      }
+    },
+    {
+      "t": 22182.4,
+      "rowid": 16,
+      "aggregateID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+      "seq": 15,
+      "type": "message.updated.1",
+      "data": {
+        "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+        "info": {
+          "id": "msg_08e0dc194001nOzi7G94SV7dQw",
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "role": "assistant",
+          "time": {
+            "created": 1789089661332,
+            "completed": 1789089668760
+          },
+          "parentID": "msg_08e0dc130001RlHgBuDBZzydQ1",
+          "modelID": "big-pickle",
+          "providerID": "opencode",
+          "mode": "build",
+          "agent": "build",
+          "path": {
+            "cwd": "/private/sandbox/project",
+            "root": "/private/sandbox/project"
+          },
+          "cost": 0,
+          "tokens": {
+            "total": 8512,
+            "input": 6602,
+            "output": 118,
+            "reasoning": 0,
+            "cache": {
+              "read": 1792,
+              "write": 0
+            }
+          },
+          "finish": "tool-calls"
+        }
+      }
+    },
+    {
+      "t": 22204.2,
+      "rowid": 17,
+      "aggregateID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+      "seq": 16,
+      "type": "session.updated.1",
+      "data": {
+        "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+        "info": {
+          "id": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "slug": "probe",
+          "projectID": "global",
+          "directory": "/private/sandbox/project",
+          "path": "",
+          "summary": {
+            "additions": 0,
+            "deletions": 0,
+            "files": 0
+          },
+          "cost": 0,
+          "tokens": {
+            "input": 6602,
+            "output": 118,
+            "reasoning": 0,
+            "cache": {
+              "read": 1792,
+              "write": 0
+            }
+          },
+          "title": "probe",
+          "agent": "build",
+          "model": {
+            "id": "big-pickle",
+            "providerID": "opencode",
+            "variant": "default"
+          },
+          "version": "0.0.0-probe",
+          "time": {
+            "created": 1789089643153,
+            "updated": 1789089668789
+          }
+        }
+      }
+    },
+    {
+      "t": 22376.3,
+      "rowid": 18,
+      "aggregateID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+      "seq": 17,
+      "type": "message.updated.1",
+      "data": {
+        "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+        "info": {
+          "id": "msg_08e0dc130001RlHgBuDBZzydQ1",
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "role": "user",
+          "time": {
+            "created": 1789089661232
+          },
+          "summary": {
+            "diffs": []
+          },
+          "agent": "build",
+          "model": {
+            "providerID": "opencode",
+            "modelID": "big-pickle"
+          }
+        }
+      }
+    }
+  ],
+  "http": [
+    {
+      "t": 11211.4,
+      "method": "GET",
+      "path": "/session/status",
+      "auth": false,
+      "status": 401,
+      "body": null
+    },
+    {
+      "t": 11229.5,
+      "method": "GET",
+      "path": "/session/status",
+      "auth": true,
+      "status": 200,
+      "body": {}
+    },
+    {
+      "t": 11239,
+      "method": "GET",
+      "path": "/permission",
+      "auth": true,
+      "status": 200,
+      "body": []
+    },
+    {
+      "t": 11515,
+      "method": "GET",
+      "path": "/question",
+      "auth": true,
+      "status": 200,
+      "body": []
+    },
+    {
+      "t": 21668.1,
+      "method": "GET",
+      "path": "/question",
+      "auth": true,
+      "status": 200,
+      "body": [
+        {
+          "id": "que_08e0ddc5f001oyEb9jhdFwaBzc",
+          "sessionID": "ses_4b206a930b354bc6965a368a5b3f3cb0",
+          "questions": [
+            {
+              "question": "Do you prefer the color red or blue?",
+              "header": "Color preference",
+              "options": [
+                {
+                  "label": "Red",
+                  "description": "The color red"
+                },
+                {
+                  "label": "Blue",
+                  "description": "The color blue"
+                }
+              ]
+            }
+          ],
+          "tool": {
+            "messageID": "msg_08e0dc194001nOzi7G94SV7dQw",
+            "callID": "call_240c5f26882d433c8815bbef"
+          }
+        }
+      ]
+    },
+    {
+      "t": 21699.7,
+      "method": "POST",
+      "path": "/question/que_08e0ddc5f001oyEb9jhdFwaBzc/reject",
+      "auth": true,
+      "status": 200,
+      "body": true
+    }
+  ],
+  "prompts": [
+    {
+      "t": 14515.8,
+      "text": "Use the question tool to ask me whether I prefer red or blue. Do not answer it yourself and do not guess."
+    }
+  ],
+  "pty": {
+    "firstOutputAt": 4312.2,
+    "bytes": 50012,
+    "exit": {
+      "exitCode": 0,
+      "signal": 0,
+      "t": 26024.5
+    },
+    "tail": "?25h■■■⬝⬝⬝⬝⬝■■■■⬝⬝⬝⬝■■■■■⬝⬝⬝■■■■■■⬝⬝⠋ Thinking ▣ Build · Big Pickle⬝■■■■■■⬝⬝⬝■■■■■■⠙⬝⬝⬝■■■■■⠹⬝⬝⬝⬝■■■■⬝⬝⬝⬝⬝■■■⠸⬝⬝⬝⬝⬝⬝■■⬝⬝⬝⬝⬝⬝⬝■⠼⬝⬝⬝⬝⬝⬝⬝⬝⬝⬝⬝⬝⬝⬝⬝⬝⠴⬝⬝⬝⬝⬝⬝⬝⬝⬝⬝⬝⬝⬝⬝■■⠦+ ought: 634ms~ Askng questions… ▣ Build · Big Pickle⬝⬝⬝⬝⬝■■■⬝⬝⬝⬝■■■■⬝⬝⬝■■■■■⬝⬝■■■■■■⬝■■■■■■⬝■■■■■■⬝⬝■■■■■⬝⬝⬝■■■■⬝⬝⬝⬝■■■⬝⬝⬝⬝⬝■■⬝⬝⬝⬝⬝⬝→ Asked 1 question ┃ ┃ Do you prefer the color red or blue? ┃ ┃ 1. Red ┃ The color red ┃ 2. Blue ┃ The color blue ┃ 3. Type your own answer ┃ ┃ ↑↓ select enter submit esc dismiss ┃ →Asked 1 question ┃ ┃ ┃ ┃ Build · Big Pickle OpenCode Zen ╹▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀ ■⬝⬝⬝⬝⬝⬝⬝ esc interrupt tab agents ctrl+p commands■■⬝⬝⬝⬝⬝⬝■■■⬝⬝⬝⬝⬝■■■■⬝⬝⬝⬝■■■■■⬝⬝⬝ 8.5K (4%)■■■■■■⬝⬝⬝■■■■■■⬝⬝⬝■■■■■■⬝⬝⬝■■■■■┃ Build·Big PickleOpenCode Zen╹▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀ /tmp/opencode-terminal-headless-probe/ 8.5K (4% ctrl+p 1789089642071-6d8a5f/roject commands \u001b[>4;0m ▄ █▀▀█ █▀▀█ █▀▀█ █▀▀▄ █▀▀▀ █▀▀█ █▀▀█ █▀▀█ █ █ █ █ █▀▀▀ █ █ █ █ █ █ █ █▀▀▀ ▀▀▀▀ █▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ Session probe Continue opencode -s ses_4b206a930b354bc6965a368a5b3f3cb0 "
+  }
+}
