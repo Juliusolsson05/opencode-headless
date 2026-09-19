@@ -1,4 +1,5 @@
 import { CommittedChannel } from '../channels/CommittedChannel.js'
+import { permissionSubject, questionText } from '../permissions/subject.js'
 import { ScreenChannel } from '../channels/ScreenChannel.js'
 import { SemanticChannel } from '../channels/SemanticChannel.js'
 import type { SemanticBlockKind } from '../channels/types.js'
@@ -954,7 +955,10 @@ export class EventDispatcher {
       visible: true,
       requestID,
       sessionID: this.eventSessionID(payload),
-      title: getString(payload, ['title', 'tool', 'action', 'permission.action']),
+      // The shared parser, not a first-non-null key walk: on OpenCode 1.18.30
+      // `tool` is an object that used to stop the walk and blank the subject
+      // (agent-code#878). See permissions/subject.ts.
+      title: permissionSubject(payload),
       metadata: payload,
     })
   }
@@ -964,7 +968,8 @@ export class EventDispatcher {
       visible: true,
       questionID: getString(payload, ['questionID', 'id']) ?? undefined,
       sessionID: this.eventSessionID(payload),
-      text: getString(payload, ['text', 'question', 'prompt']) ?? undefined,
+      // 1.18.30 nests the text in questions[].question (agent-code#878).
+      text: questionText(payload),
       metadata: payload,
     })
   }
